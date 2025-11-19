@@ -8,7 +8,7 @@ from pathlib import Path
 def create_deb_structure():
     project_root = Path(__file__).parent.parent
     dist_dir = project_root / "dist"
-    pkg_dir = dist_dir / "bulletinpro-1.0.0"
+    pkg_dir = dist_dir / "bulletinpro_prof-1.0.0"
     
     print("📦 Création de la structure .deb...")
     
@@ -27,7 +27,7 @@ def create_deb_structure():
         directory.mkdir(parents=True, exist_ok=True)
     
     # Fichier DEBIAN/control
-    control = """Package: bulletinpro
+    control = """Package: bulletinpro_prof
 Version: 1.0.0
 Section: education
 Priority: optional
@@ -51,15 +51,15 @@ Type=Application
 Name=BulletinPro_Prof
 GenericName=Gestion de Bulletins Scolaires
 Comment=Gérez les notes et bulletins de votre établissement
-Exec=/usr/bin/bulletinpro
-Icon=bulletinpro
+Exec=/usr/bin/bulletinpro_prof
+Icon=bulletinpro_prof
 Terminal=false
 Categories=Education;Office;
 Keywords=école;notes;bulletins;
 StartupNotify=true
 """
     
-    with open(pkg_dir / "usr" / "share" / "applications" / "bulletinpro.desktop", "w") as f:
+    with open(pkg_dir / "usr" / "share" / "applications" / "bulletinpro_prof.desktop", "w") as f:
         f.write(desktop)
     
     # Scripts post-installation
@@ -77,8 +77,8 @@ exit 0
     os.chmod(postinst_path, 0o755)
     
     # Copier l'exécutable
-    exe_src = dist_dir / "bulletinpro"
-    exe_dst = pkg_dir / "usr" / "bin" / "bulletinpro"
+    exe_src = dist_dir / "bulletinpro_prof"
+    exe_dst = pkg_dir / "usr" / "bin" / "bulletinpro_prof"
     if exe_src.exists():
         shutil.copy2(exe_src, exe_dst)
         os.chmod(exe_dst, 0o755)
@@ -88,14 +88,14 @@ exit 0
     icons_dir = project_root / "assets" / "icons"
     for size in [16, 32, 48, 64, 128, 256, 512]:
         icon_src = icons_dir / f"app_icon_{size}x{size}.png"
-        icon_dst = pkg_dir / "usr" / "share" / "icons" / "hicolor" / f"{size}x{size}" / "apps" / "bulletinpro.png"
+        icon_dst = pkg_dir / "usr" / "share" / "icons" / "hicolor" / f"{size}x{size}" / "apps" / "bulletinpro_prof.png"
         if icon_src.exists():
             shutil.copy2(icon_src, icon_dst)
     
     # Copier vers pixmaps
-    main_icon = icons_dir / "app_icon.png"
+    main_icon = icons_dir / "logo.png"
     if main_icon.exists():
-        shutil.copy2(main_icon, pkg_dir / "usr" / "share" / "pixmaps" / "bulletinpro.png")
+        shutil.copy2(main_icon, pkg_dir / "usr" / "share" / "pixmaps" / "bulletinpro_prof.png")
     
     print("✅ Structure .deb créée avec succès !")
 
