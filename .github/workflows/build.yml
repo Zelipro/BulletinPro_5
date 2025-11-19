@@ -24,7 +24,7 @@ on:
         default: '1.0.0'
 
 env:
-  APP_NAME: BulletinPro_Pro
+  APP_NAME: BulletinPro_Prof
   PYTHON_VERSION: '3.11'
 
 permissions:
@@ -180,7 +180,7 @@ jobs:
       with:
         files: ./release/*
         body: |
-          ## 🎉 BulletinPro ${{ github.ref_name }}
+          ## 🎉 BulletinPro_Prof ${{ github.ref_name }}
           
           ### 📥 Téléchargements
           
