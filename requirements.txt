@@ -1,0 +1,49 @@
+# ================================
+# BULLETINPRO PROF - REQUIREMENTS
+# Version Professeur (Saisie de notes)
+# ================================
+
+# Core Framework
+flet>=0.24.0
+flet-core>=0.24.0
+flet-runtime>=0.24.0
+
+# Database & Cloud Backend
+supabase==2.9.0
+postgrest==0.17.0
+python-dotenv==1.0.1
+
+# Image Processing (pour les icônes)
+Pillow==10.4.0
+
+# Build Tools (pour créer l'exécutable)
+pyinstaller==6.11.0
+
+# Utilities
+requests==2.31.0
+
+# ================================
+# NOTES DE VERSION
+# ================================
+# - flet : Framework UI principal
+# - supabase : Synchronisation cloud
+# - Pillow : Génération des icônes d'application
+# - pyinstaller : Création de l'exécutable Windows/Linux
+# - python-dotenv : Gestion des variables d'environnement
+
+# ================================
+# INSTALLATION
+# ================================
+# pip install -r requirements.txt
+
+# ================================
+# DIFFÉRENCES AVEC VERSION ADMIN
+# ================================
+# SUPPRIMÉ :
+# - fpdf2 (génération de PDF bulletins)
+# - Bibliothèques de reporting
+#
+# CONSERVÉ :
+# - flet (interface utilisateur)
+# - supabase (synchronisation des notes)
+# - sqlite3 (base locale, inclus dans Python)
