@@ -27,7 +27,7 @@ Name: "desktopicon"; Description: "Creer raccourci bureau"
 
 [Files]
 ; Copier tout le contenu du package
-Source: "..\dist\BulletinPro_Package\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+Source: "..\dist\BulletinPro_Prof_Package\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Icons]
 ; Utiliser l'icône depuis le package installé
