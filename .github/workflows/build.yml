@@ -148,7 +148,7 @@ jobs:
     - name: 📤 Upload binaire Linux
       uses: actions/upload-artifact@v4
       with:
-        name: BulletinPro_Prof-Linux-Binary
+        name: BulletinPro-Prof-Linux-Binary
         path: dist/bulletinpro-prof
         retention-days: 30
         if-no-files-found: warn
