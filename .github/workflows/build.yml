@@ -1,4 +1,4 @@
-name: 🚀 Build BulletinPro_Pro Multi-Platform
+name: 🚀 Build BulletinPro-Prof Multi-Platform
 
 on:
   push:
@@ -24,7 +24,7 @@ on:
         default: '1.0.0'
 
 env:
-  APP_NAME: BulletinPro_Prof
+  APP_NAME: BulletinPro-Prof
   PYTHON_VERSION: '3.11'
 
 permissions:
@@ -61,7 +61,7 @@ jobs:
     
     - name: 🔨 Compilation PyInstaller
       run: |
-        pyinstaller --noconfirm --clean --name "BulletinPro_Prof" --windowed --onefile --icon "assets/icons/logo.ico" --add-data "config.py;." --add-data "assets/icons;assets/icons" --hidden-import "flet" --hidden-import "flet.core" --hidden-import "fpdf" --hidden-import "supabase" main.py
+        pyinstaller --noconfirm --clean --name "BulletinPro-Prof" --windowed --onefile --icon "assets/icons/logo.ico" --add-data "config.py;." --add-data "assets/icons;assets/icons" --hidden-import "flet" --hidden-import "flet.core" --hidden-import "fpdf" --hidden-import "supabase" main.py
       shell: pwsh
     
     - name: 📦 Préparation structure Windows
@@ -81,15 +81,15 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: BulletinPro_Prof-Windows-Installer
-        path: dist/installers/BulletinPro_Prof_Setup_*.exe
+        path: dist/installers/BulletinPro-Prof_Setup_*.exe
         retention-days: 30
         if-no-files-found: warn
     
     - name: 📤 Upload portable Windows
       uses: actions/upload-artifact@v4
       with:
-        name: BulletinPro_Prof-Windows-Portable
-        path: dist/BulletinPro_Prof.exe
+        name: BulletinPro-Prof-Windows-Portable
+        path: dist/BulletinPro-Prof.exe
         retention-days: 30
         if-no-files-found: warn
 
@@ -126,7 +126,7 @@ jobs:
     
     - name: 🔨 Compilation PyInstaller
       run: |
-        pyinstaller --noconfirm --clean --name "bulletinpro_Prof" --windowed --onefile --icon "assets/icons/logo.png" --add-data "config.py:." --add-data "assets/icons:assets/icons" --hidden-import "flet" --hidden-import "flet.core" --hidden-import "fpdf" --hidden-import "supabase" main.py
+        pyinstaller --noconfirm --clean --name "bulletinpro-Prof" --windowed --onefile --icon "assets/icons/logo.png" --add-data "config.py:." --add-data "assets/icons:assets/icons" --hidden-import "flet" --hidden-import "flet.core" --hidden-import "fpdf" --hidden-import "supabase" main.py
     
     - name: 📦 Création structure .deb
       run: python scripts/build_linux.py
@@ -134,14 +134,14 @@ jobs:
     - name: 🎁 Build package .deb
       run: |
         cd dist
-        dpkg-deb --build bulletinpro_prof-1.0.0
-        mv bulletinpro_prof-1.0.0.deb BulletinPro_Prof-1.0.0-amd64.deb
+        dpkg-deb --build bulletinpro-prof-1.0.0
+        mv bulletinpro-prof-1.0.0.deb BulletinPro-Prof-1.0.0-amd64.deb
     
     - name: 📤 Upload package .deb
       uses: actions/upload-artifact@v4
       with:
-        name: BulletinPro-Linux-DEB
-        path: dist/BulletinPro_Prof-*.deb
+        name: BulletinPro-Prof-Linux-DEB
+        path: dist/BulletinPro-Prof-*.deb
         retention-days: 30
         if-no-files-found: warn
     
@@ -149,7 +149,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: BulletinPro_Prof-Linux-Binary
-        path: dist/bulletinpro_prof
+        path: dist/bulletinpro-prof
         retention-days: 30
         if-no-files-found: warn
 
@@ -166,13 +166,13 @@ jobs:
     - name: 📥 Download Windows Installer
       uses: actions/download-artifact@v4
       with:
-        name: BulletinPro_Prof-Windows-Installer
+        name: BulletinPro-Prof-Windows-Installer
         path: ./release
     
     - name: 📥 Download Linux Package
       uses: actions/download-artifact@v4
       with:
-        name: BulletinPro_Prof-Linux-DEB
+        name: BulletinPro-Prof-Linux-DEB
         path: ./release
     
     - name: 🎉 Create GitHub Release
@@ -180,20 +180,20 @@ jobs:
       with:
         files: ./release/*
         body: |
-          ## 🎉 BulletinPro_Prof ${{ github.ref_name }}
+          ## 🎉 BulletinPro-Prof ${{ github.ref_name }}
           
           ### 📥 Téléchargements
           
           **Windows** :
-          - Installateur complet : `BulletinPro_Prof_Setup_*.exe`
+          - Installateur complet : `BulletinPro-Prof_Setup_*.exe`
           
           **Linux** :
-          - Package Debian : `BulletinPro_Prof-*-amd64.deb`
+          - Package Debian : `BulletinPro-Prof-*-amd64.deb`
           
           ### Installation
           
           **Windows** : Double-clic sur l'installateur
-          **Linux** : `sudo dpkg -i BulletinPro_Prof-*.deb`
+          **Linux** : `sudo dpkg -i BulletinPro-Prof-*.deb`
         draft: false
         prerelease: false
       env:
