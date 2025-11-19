@@ -59,13 +59,47 @@ jobs:
       run: python scripts/create_icons.py
       shell: pwsh
     
+    - name: 🔍 Vérification des icônes créées
+      run: |
+        Write-Host "=== Verification des icones ==="
+        Get-ChildItem -Path "assets\icons\*.ico" -Recurse | ForEach-Object { 
+          Write-Host "✓ $_" 
+        }
+        if (Test-Path "assets\icons\logo.ico") {
+          Write-Host "✓ logo.ico trouvé"
+        } else {
+          Write-Host "✗ logo.ico MANQUANT"
+          exit 1
+        }
+      shell: pwsh
+    
     - name: 🔨 Compilation PyInstaller
       run: |
         pyinstaller --noconfirm --clean --name "BulletinPro" --windowed --onefile --icon "assets/icons/logo.ico" --add-data "config.py;." --add-data "assets/icons;assets/icons" --hidden-import "flet" --hidden-import "flet.core" --hidden-import "fpdf" --hidden-import "supabase" main.py
       shell: pwsh
     
+    - name: 🔍 Vérification de l'exécutable
+      run: |
+        Write-Host "=== Verification de l'executable ==="
+        if (Test-Path "dist\BulletinPro.exe") {
+          $size = (Get-Item "dist\BulletinPro.exe").Length / 1MB
+          Write-Host "✓ BulletinPro.exe : $([math]::Round($size, 2)) MB"
+        } else {
+          Write-Host "✗ BulletinPro.exe MANQUANT"
+          exit 1
+        }
+      shell: pwsh
+    
     - name: 📦 Préparation structure Windows
       run: python scripts/build_windows.py
+      shell: pwsh
+    
+    - name: 🔍 Vérification du package
+      run: |
+        Write-Host "=== Contenu du package ==="
+        Get-ChildItem -Path "dist\BulletinPro_Package" -Recurse | ForEach-Object {
+          Write-Host "  $_"
+        }
       shell: pwsh
     
     - name: 🛠️ Installation Inno Setup
