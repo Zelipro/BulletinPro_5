@@ -33,8 +33,8 @@ Section: education
 Priority: optional
 Architecture: amd64
 Depends: libc6 (>= 2.31), libgtk-3-0
-Maintainer: Votre Nom <votre@email.com>
-Homepage: https://github.com/votre-username/BulletinPro
+Maintainer: Votre Nom <Zeli>
+Homepage: https://github.com/Zelipro/BulletinPro
 Description: Système de gestion de bulletins scolaires
  BulletinPro est une application complète pour la gestion
  des notes, élèves, professeurs et génération de bulletins
@@ -48,7 +48,7 @@ Description: Système de gestion de bulletins scolaires
     desktop = """[Desktop Entry]
 Version=1.0
 Type=Application
-Name=BulletinPro
+Name=BulletinPro_Prof
 GenericName=Gestion de Bulletins Scolaires
 Comment=Gérez les notes et bulletins de votre établissement
 Exec=/usr/bin/bulletinpro
