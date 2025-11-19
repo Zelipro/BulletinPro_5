@@ -1,0 +1,200 @@
+name: 🚀 Build BulletinPro Multi-Platform
+
+on:
+  push:
+    branches: 
+      - main
+      - develop
+    tags:
+      - 'v*.*.*'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+  
+  pull_request:
+    branches: 
+      - main
+  
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version à builder'
+        required: false
+        default: '1.0.0'
+
+env:
+  APP_NAME: BulletinPro_Prof
+  PYTHON_VERSION: '3.11'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: 🪟 Build Windows
+    runs-on: windows-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: 📥 Checkout du code source
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: 🐍 Installation de Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: 📦 Installation des dépendances
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -r requirements.txt
+        pip install pillow
+      shell: pwsh
+    
+    - name: 🖼️ Génération des icônes
+      run: python scripts/create_icons.py
+      shell: pwsh
+    
+    - name: 🔨 Compilation PyInstaller
+      run: |
+        pyinstaller --noconfirm --clean --name "BulletinPro" --windowed --onefile --icon "assets/icons/logo.ico" --add-data "config.py;." --add-data "assets/icons;assets/icons" --hidden-import "flet" --hidden-import "flet.core" --hidden-import "fpdf" --hidden-import "supabase" main.py
+      shell: pwsh
+    
+    - name: 📦 Préparation structure Windows
+      run: python scripts/build_windows.py
+      shell: pwsh
+    
+    - name: 🛠️ Installation Inno Setup
+      run: choco install innosetup -y --no-progress
+      shell: pwsh
+    
+    - name: 🎁 Création installateur
+      run: |
+        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/windows.iss
+      shell: pwsh
+    
+    - name: 📤 Upload installateur Windows
+      uses: actions/upload-artifact@v4
+      with:
+        name: BulletinPro-Windows-Installer
+        path: dist/installers/BulletinPro_Setup_*.exe
+        retention-days: 30
+        if-no-files-found: warn
+    
+    - name: 📤 Upload portable Windows
+      uses: actions/upload-artifact@v4
+      with:
+        name: BulletinPro-Windows-Portable
+        path: dist/BulletinPro.exe
+        retention-days: 30
+        if-no-files-found: warn
+
+  build-linux:
+    name: 🐧 Build Linux
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    
+    steps:
+    - name: 📥 Checkout du code source
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: 🐍 Installation de Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: 📦 Installation dépendances système
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y libgtk-3-0 libnotify4 dpkg-dev fakeroot
+    
+    - name: 📦 Installation dépendances Python
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pillow
+    
+    - name: 🖼️ Génération des icônes
+      run: python scripts/create_icons.py
+    
+    - name: 🔨 Compilation PyInstaller
+      run: |
+        pyinstaller --noconfirm --clean --name "bulletinpro" --windowed --onefile --icon "assets/icons/app_icon.png" --add-data "config.py:." --add-data "assets/icons:assets/icons" --hidden-import "flet" --hidden-import "flet.core" --hidden-import "fpdf" --hidden-import "supabase" main.py
+    
+    - name: 📦 Création structure .deb
+      run: python scripts/build_linux.py
+    
+    - name: 🎁 Build package .deb
+      run: |
+        cd dist
+        dpkg-deb --build bulletinpro-1.0.0
+        mv bulletinpro-1.0.0.deb BulletinPro-1.0.0-amd64.deb
+    
+    - name: 📤 Upload package .deb
+      uses: actions/upload-artifact@v4
+      with:
+        name: BulletinPro-Linux-DEB
+        path: dist/BulletinPro-*.deb
+        retention-days: 30
+        if-no-files-found: warn
+    
+    - name: 📤 Upload binaire Linux
+      uses: actions/upload-artifact@v4
+      with:
+        name: BulletinPro-Linux-Binary
+        path: dist/bulletinpro
+        retention-days: 30
+        if-no-files-found: warn
+
+  create-release:
+    name: 🎉 Création Release
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+    
+    - name: 📥 Download Windows Installer
+      uses: actions/download-artifact@v4
+      with:
+        name: BulletinPro-Windows-Installer
+        path: ./release
+    
+    - name: 📥 Download Linux Package
+      uses: actions/download-artifact@v4
+      with:
+        name: BulletinPro-Linux-DEB
+        path: ./release
+    
+    - name: 🎉 Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ./release/*
+        body: |
+          ## 🎉 BulletinPro ${{ github.ref_name }}
+          
+          ### 📥 Téléchargements
+          
+          **Windows** :
+          - Installateur complet : `BulletinPro_Setup_*.exe`
+          
+          **Linux** :
+          - Package Debian : `BulletinPro-*-amd64.deb`
+          
+          ### Installation
+          
+          **Windows** : Double-clic sur l'installateur
+          **Linux** : `sudo dpkg -i BulletinPro-*.deb`
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
