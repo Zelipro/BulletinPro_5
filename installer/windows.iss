@@ -12,7 +12,8 @@ DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 OutputDir=..\dist\installers
 OutputBaseFilename=BulletinPro_Setup_{#MyAppVersion}
-SetupIconFile=..\dist\BulletinPro_Package\app_icon.ico
+; *** SUPPRIMÉ SetupIconFile car le fichier n'existe pas encore ***
+; SetupIconFile sera géré par le package lui-même
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -25,11 +26,13 @@ Name: "french"; MessagesFile: "compiler:Languages\French.isl"
 Name: "desktopicon"; Description: "Creer raccourci bureau"
 
 [Files]
+; Copier tout le contenu du package
 Source: "..\dist\BulletinPro_Package\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+; Utiliser l'icône depuis le package installé
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\logo.ico"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\logo.ico"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Flags: nowait postinstall skipifsilent
