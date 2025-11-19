@@ -18,7 +18,7 @@ def build_windows():
         "pyinstaller",
         "--noconfirm",
         "--clean",
-        "--name", "BulletinPro_Prof",
+        "--name", "BulletinPro_prof",
         "--windowed",
         "--onefile",
         "--icon", "assets/icons/logo.ico",
@@ -63,7 +63,7 @@ def build_linux():
         "pyinstaller",
         "--noconfirm",
         "--clean",
-        "--name", "bulletinpro_Prof",
+        "--name", "bulletinpro_prof",
         "--windowed",
         "--onefile",
         "--icon", "assets/icons/logo.png",
@@ -87,7 +87,7 @@ def build_linux():
         subprocess.run(cmd, check=True)
         
         # 2. StaticX (optionnel, nécessite installation: pip install staticx)
-        exe_path = Path("dist/bulletinpro")
+        exe_path = Path("dist/bulletinpro_prof")
         
         if exe_path.exists():
             print("✅ PyInstaller terminé")
@@ -95,15 +95,15 @@ def build_linux():
             # Essayer StaticX si disponible
             try:
                 subprocess.run(
-                    ["staticx", "dist/bulletinpro", "dist/bulletinpro-static"],
+                    ["staticx", "dist/bulletinpro_prof", "dist/bulletinpro_prof-static"],
                     check=True
                 )
-                os.replace("dist/bulletinpro-static", "dist/bulletinpro")
-                os.chmod("dist/bulletinpro", 0o755)
+                os.replace("dist/bulletinpro_prof-static", "dist/bulletinpro_prof")
+                os.chmod("dist/bulletinpro_prof", 0o755)
                 print("✅ StaticX appliqué (binaire statique)")
             except FileNotFoundError:
                 print("⚠️ StaticX non installé (binaire dynamique)")
-                os.chmod("dist/bulletinpro", 0o755)
+                os.chmod("dist/bulletinpro_prof", 0o755)
             
             size = exe_path.stat().st_size / (1024 * 1024)
             print(f"✅ Build Linux terminé : {size:.2f} MB")
@@ -119,7 +119,7 @@ def build_linux():
 def main():
     """Point d'entrée"""
     print("=" * 60)
-    print("BUILD LOCAL - BulletinPro")
+    print("BUILD LOCAL - BulletinPro_Prof")
     print("=" * 60)
     
     # Détection OS
@@ -149,7 +149,7 @@ def main():
         print("\n" + "=" * 60)
         print("✅ BUILD TERMINÉ AVEC SUCCÈS")
         print("=" * 60)
-        print(f"\n📁 Fichier : dist/{('BulletinPro_Prof.exe' if system == 'Windows' else 'bulletinpro_Prof')}")
+        print(f"\n📁 Fichier : dist/{('BulletinPro_Prof.exe' if system == 'Windows' else 'bulletinpro_prof')}")
         return 0
     else:
         print("\n❌ BUILD ÉCHOUÉ")
