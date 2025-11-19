@@ -1,7 +1,7 @@
-#define MyAppName "BulletinPro"
+#define MyAppName "BulletinPro_Prof"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Ecole"
-#define MyAppExeName "BulletinPro.exe"
+#define MyAppExeName "BulletinPro_Prof.exe"
 
 [Setup]
 AppId={{8F9A3B2C-1D4E-5F6A-7B8C-9D0E1F2A3B4C}
