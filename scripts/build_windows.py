@@ -31,9 +31,9 @@ def create_windows_structure():
         installers_dir.mkdir(parents=True, exist_ok=True)
         
         # Vérifier que l'exécutable existe
-        exe_path = dist_dir / "BulletinPro_Prof.exe"
+        exe_path = dist_dir / "BulletinPro-Prof.exe"
         if not exe_path.exists():
-            print("[ERROR] BulletinPro.exe introuvable dans dist/")
+            print("[ERROR] BulletinPro-Prof.exe introuvable dans dist/")
             print("[INFO] Lancez d'abord PyInstaller pour creer l'executable")
             return False
         
@@ -41,14 +41,14 @@ def create_windows_structure():
         print(f"[INFO] Taille : {exe_path.stat().st_size / (1024*1024):.2f} MB")
         
         # Copier les fichiers nécessaires dans un dossier temporaire
-        temp_dir = dist_dir / "BulletinPro_Package"
+        temp_dir = dist_dir / "BulletinPro-Prof_Package"
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
         temp_dir.mkdir()
         
         # Copier l'exécutable et le renommer
-        shutil.copy2(exe_path, temp_dir / "BulletinPro_Prof.exe")
-        print("[OK] Executable copie et renomme en BulletinPro_Prof.exe")
+        shutil.copy2(exe_path, temp_dir / "BulletinPro-Prof.exe")
+        print("[OK] Executable copie et renomme en BulletinPro-Prof.exe")
         
         # Chercher et copier les icônes
         icons_dir = project_root / "assets" / "icons"
@@ -106,7 +106,7 @@ def main():
     """Fonction principale"""
     
     print("=" * 60)
-    print("BUILD WINDOWS - BulletinPro")
+    print("BUILD WINDOWS - BulletinPro-Prof")
     print("=" * 60)
     print("")
     
@@ -119,9 +119,9 @@ def main():
     print("[SUCCESS] PREPARATION WINDOWS TERMINEE")
     print("=" * 60)
     print("\n[INFO] Prochaines etapes :")
-    print("   1. L'executable est pret dans : dist/BulletinPro_Package/")
+    print("   1. L'executable est pret dans : dist/BulletinPro-Prof_Package/")
     print("   2. Inno Setup compilera automatiquement l'installateur")
-    print("   3. Resultat : dist/installers/BulletinPro_Setup_1.0.0.exe")
+    print("   3. Resultat : dist/installers/BulletinPro-Prof_Setup_1.0.0.exe")
     
     return 0
 
