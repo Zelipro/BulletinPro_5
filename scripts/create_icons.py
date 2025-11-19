@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 from pathlib import Path
 import sys
+import shutil
 
 # Forcer l'encodage UTF-8 pour Windows
 if sys.platform == "win32":
@@ -57,11 +58,17 @@ def create_app_icons():
         
         print("[INFO] Generation des icones...")
         
-        # 1. Icône Windows (.ico) - Multiples résolutions
-        print("[INFO] Creation de l'icone Windows (.ico)...")
+        # 1. Icônes Windows (.ico) - Multiples résolutions
+        print("[INFO] Creation des icones Windows (.ico)...")
         icon_sizes = [(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
+        
+        # Créer app_icon.ico (pour l'application)
         img.save(icons_dir / "app_icon.ico", format='ICO', sizes=icon_sizes)
         print("[OK] app_icon.ico cree")
+        
+        # Créer logo.ico (pour l'installateur)
+        img.save(icons_dir / "logo.ico", format='ICO', sizes=icon_sizes)
+        print("[OK] logo.ico cree")
         
         # 2. Icônes Linux (.png) - Plusieurs tailles
         print("[INFO] Creation des icones Linux (.png)...")
@@ -76,8 +83,19 @@ def create_app_icons():
         img.resize((512, 512), Image.Resampling.LANCZOS).save(icons_dir / "app_icon.png")
         print("[OK] app_icon.png cree")
         
+        # 4. Copier logo.png si nécessaire
+        if not (icons_dir / "logo.png").exists():
+            shutil.copy2(logo_path, icons_dir / "logo.png")
+            print("[OK] logo.png copie")
+        
         print("\n[SUCCESS] Toutes les icones ont ete generees avec succes !")
         print(f"[INFO] Dossier: {icons_dir}")
+        print(f"[INFO] Fichiers crees:")
+        print("  - app_icon.ico (application)")
+        print("  - logo.ico (installateur)")
+        print("  - app_icon.png")
+        print("  - logo.png")
+        print(f"  - app_icon_{{size}}x{{size}}.png (7 tailles)")
         
         return True
         
