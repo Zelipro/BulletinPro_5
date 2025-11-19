@@ -94,7 +94,7 @@ exit 0
     # Copier les icônes
     icons_dir = project_root / "assets" / "icons"
     for size in [16, 32, 48, 64, 128, 256, 512]:
-        icon_src = icons_dir / f"app_icon_{size}x{size}.png"
+        icon_src = icons_dir / f"logo_{size}x{size}.png"
         icon_dst = pkg_dir / "usr" / "share" / "icons" / "hicolor" / f"{size}x{size}" / "apps" / "bulletinpro-prof.png"
         if icon_src.exists():
             shutil.copy2(icon_src, icon_dst)
