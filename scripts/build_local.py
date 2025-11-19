@@ -18,7 +18,7 @@ def build_windows():
         "pyinstaller",
         "--noconfirm",
         "--clean",
-        "--name", "BulletinPro_prof",
+        "--name", "BulletinPro-prof",
         "--windowed",
         "--onefile",
         "--icon", "assets/icons/logo.ico",
@@ -41,7 +41,7 @@ def build_windows():
     try:
         subprocess.run(cmd, check=True)
         
-        exe_path = Path("dist/BulletinPro_Prof.exe")
+        exe_path = Path("dist/BulletinPro-Prof.exe")
         if exe_path.exists():
             size = exe_path.stat().st_size / (1024 * 1024)
             print(f"✅ Build Windows terminé : {size:.2f} MB")
@@ -63,7 +63,7 @@ def build_linux():
         "pyinstaller",
         "--noconfirm",
         "--clean",
-        "--name", "bulletinpro_prof",
+        "--name", "bulletinpro-prof",
         "--windowed",
         "--onefile",
         "--icon", "assets/icons/logo.png",
@@ -87,7 +87,7 @@ def build_linux():
         subprocess.run(cmd, check=True)
         
         # 2. StaticX (optionnel, nécessite installation: pip install staticx)
-        exe_path = Path("dist/bulletinpro_prof")
+        exe_path = Path("dist/bulletinpro-prof")
         
         if exe_path.exists():
             print("✅ PyInstaller terminé")
@@ -95,11 +95,11 @@ def build_linux():
             # Essayer StaticX si disponible
             try:
                 subprocess.run(
-                    ["staticx", "dist/bulletinpro_prof", "dist/bulletinpro_prof-static"],
+                    ["staticx", "dist/bulletinpro-prof", "dist/bulletinpro-prof-static"],
                     check=True
                 )
-                os.replace("dist/bulletinpro_prof-static", "dist/bulletinpro_prof")
-                os.chmod("dist/bulletinpro_prof", 0o755)
+                os.replace("dist/bulletinpro-prof-static", "dist/bulletinpro-prof")
+                os.chmod("dist/bulletinpro-prof", 0o755)
                 print("✅ StaticX appliqué (binaire statique)")
             except FileNotFoundError:
                 print("⚠️ StaticX non installé (binaire dynamique)")
@@ -119,7 +119,7 @@ def build_linux():
 def main():
     """Point d'entrée"""
     print("=" * 60)
-    print("BUILD LOCAL - BulletinPro_Prof")
+    print("BUILD LOCAL - BulletinPro-Prof")
     print("=" * 60)
     
     # Détection OS
@@ -149,7 +149,7 @@ def main():
         print("\n" + "=" * 60)
         print("✅ BUILD TERMINÉ AVEC SUCCÈS")
         print("=" * 60)
-        print(f"\n📁 Fichier : dist/{('BulletinPro_Prof.exe' if system == 'Windows' else 'bulletinpro_prof')}")
+        print(f"\n📁 Fichier : dist/{('BulletinPro-Prof.exe' if system == 'Windows' else 'bulletinpro-prof')}")
         return 0
     else:
         print("\n❌ BUILD ÉCHOUÉ")
