@@ -18,10 +18,10 @@ def build_windows():
         "pyinstaller",
         "--noconfirm",
         "--clean",
-        "--name", "BulletinPro",
+        "--name", "BulletinPro_Prof",
         "--windowed",
         "--onefile",
-        "--icon", "assets/icons/app_icon.ico",
+        "--icon", "assets/icons/logo.ico",
         "--add-data", "config.py;.",
         "--add-data", "assets/icons;assets/icons",
         "--hidden-import", "flet",
@@ -41,7 +41,7 @@ def build_windows():
     try:
         subprocess.run(cmd, check=True)
         
-        exe_path = Path("dist/BulletinPro.exe")
+        exe_path = Path("dist/BulletinPro_Prof.exe")
         if exe_path.exists():
             size = exe_path.stat().st_size / (1024 * 1024)
             print(f"✅ Build Windows terminé : {size:.2f} MB")
@@ -63,10 +63,10 @@ def build_linux():
         "pyinstaller",
         "--noconfirm",
         "--clean",
-        "--name", "bulletinpro",
+        "--name", "bulletinpro_Prof",
         "--windowed",
         "--onefile",
-        "--icon", "assets/icons/app_icon.png",
+        "--icon", "assets/icons/logo.png",
         "--add-data", "config.py:.",
         "--add-data", "assets/icons:assets/icons",
         "--hidden-import", "flet",
@@ -149,7 +149,7 @@ def main():
         print("\n" + "=" * 60)
         print("✅ BUILD TERMINÉ AVEC SUCCÈS")
         print("=" * 60)
-        print(f"\n📁 Fichier : dist/{('BulletinPro.exe' if system == 'Windows' else 'bulletinpro')}")
+        print(f"\n📁 Fichier : dist/{('BulletinPro_Prof.exe' if system == 'Windows' else 'bulletinpro_Prof')}")
         return 0
     else:
         print("\n❌ BUILD ÉCHOUÉ")
