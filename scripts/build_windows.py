@@ -40,29 +40,33 @@ def create_windows_structure():
         print(f"[OK] Executable trouve : {exe_path}")
         print(f"[INFO] Taille : {exe_path.stat().st_size / (1024*1024):.2f} MB")
         
-        # Vérifier l'icône
-        icon_path = project_root / "assets" / "icons" / "logo.ico"
-        if not icon_path.exists():
-            print("[ERROR] app_icon.ico introuvable")
-            print("[INFO] Lancez d'abord create_icons.py")
-            return False
-        
-        print(f"[OK] Icone trouvee : {icon_path}")
-        
         # Copier les fichiers nécessaires dans un dossier temporaire
         temp_dir = dist_dir / "BulletinPro_Package"
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
         temp_dir.mkdir()
         
-        # Copier l'exécutable
+        # Copier l'exécutable et le renommer
         shutil.copy2(exe_path, temp_dir / "BulletinPro_Prof.exe")
-        print("[OK] Executable copie")
+        print("[OK] Executable copie et renomme en BulletinPro_Prof.exe")
         
-        # Copier l'icône
-        icon_dest = temp_dir / "logo.ico"
-        shutil.copy2(icon_path, icon_dest)
-        print("[OK] Icone copiee")
+        # Chercher et copier les icônes
+        icons_dir = project_root / "assets" / "icons"
+        icon_copied = False
+        
+        # Essayer différents noms d'icônes
+        icon_names = ["logo.ico", "app_icon.ico"]
+        for icon_name in icon_names:
+            icon_path = icons_dir / icon_name
+            if icon_path.exists():
+                shutil.copy2(icon_path, temp_dir / "logo.ico")
+                print(f"[OK] Icone copiee depuis {icon_name}")
+                icon_copied = True
+                break
+        
+        if not icon_copied:
+            print("[WARN] Aucune icone trouvee, installateur sans icone")
+            print("[INFO] Executez: python scripts/create_icons.py")
         
         # Copier les fichiers de configuration (si présents)
         files_to_copy = ["config.py", ".env", "README.md", "LICENSE.txt"]
@@ -72,8 +76,23 @@ def create_windows_structure():
                 shutil.copy2(src, temp_dir / file)
                 print(f"[OK] {file} copie")
         
+        # Copier le dossier assets/icons si présent
+        if icons_dir.exists():
+            assets_dest = temp_dir / "assets" / "icons"
+            assets_dest.mkdir(parents=True, exist_ok=True)
+            
+            for icon_file in icons_dir.glob("*"):
+                if icon_file.is_file():
+                    shutil.copy2(icon_file, assets_dest / icon_file.name)
+            
+            print("[OK] Dossier assets/icons copie")
+        
         print("\n[SUCCESS] Structure Windows prete pour Inno Setup !")
         print(f"[INFO] Dossier : {temp_dir}")
+        print(f"[INFO] Contenu :")
+        for item in temp_dir.rglob("*"):
+            if item.is_file():
+                print(f"  - {item.relative_to(temp_dir)}")
         
         return True
         
@@ -81,110 +100,6 @@ def create_windows_structure():
         print(f"[ERROR] Erreur : {e}")
         import traceback
         traceback.print_exc()
-        return False
-
-def generate_iss_file():
-    """Génère dynamiquement le fichier .iss si nécessaire"""
-    
-    try:
-        project_root = Path(__file__).parent.parent
-        iss_path = project_root / "installer" / "windows.iss"
-        
-        # Si le fichier existe déjà, ne rien faire
-        if iss_path.exists():
-            print("[INFO] Fichier windows.iss existant trouve")
-            return True
-        
-        print("[INFO] Generation du fichier Inno Setup...")
-        
-        iss_content = """#define MyAppName "BulletinPro"
-#define MyAppVersion "1.0.0"
-#define MyAppPublisher "Votre Etablissement"
-#define MyAppExeName "BulletinPro_Prof.exe"
-
-[Setup]
-AppId={{8F9A3B2C-1D4E-5F6A-7B8C-9D0E1F2A3B4C}
-AppName={#MyAppName}
-AppVersion={#MyAppVersion}
-AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\\{#MyAppName}
-DefaultGroupName={#MyAppName}
-AllowNoIcons=yes
-OutputDir=dist\\installers
-OutputBaseFilename=BulletinPro_Setup_{#MyAppVersion}
-SetupIconFile=assets\\icons\\app_icon.ico
-Compression=lzma2/ultra64
-SolidCompression=yes
-WizardStyle=modern
-PrivilegesRequired=admin
-ArchitecturesInstallIn64BitMode=x64
-UninstallDisplayIcon={app}\\{#MyAppExeName}
-
-[Languages]
-Name: "french"; MessagesFile: "compiler:Languages\\French.isl"
-
-[Tasks]
-Name: "desktopicon"; Description: "Creer un raccourci sur le bureau"; GroupDescription: "Raccourcis:";
-
-[Files]
-Source: "dist\\BulletinPro_Package\\BulletinPro.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "dist\\BulletinPro_Package\\app_icon.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "dist\\BulletinPro_Package\\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-
-[Icons]
-Name: "{group}\\{#MyAppName}"; Filename: "{app}\\{#MyAppExeName}"; IconFilename: "{app}\\app_icon.ico"
-Name: "{group}\\Desinstaller {#MyAppName}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\\{#MyAppName}"; Filename: "{app}\\{#MyAppExeName}"; IconFilename: "{app}\\app_icon.ico"; Tasks: desktopicon
-
-[Run]
-Filename: "{app}\\{#MyAppExeName}"; Description: "Lancer {#MyAppName}"; Flags: nowait postinstall skipifsilent
-"""
-        
-        # Créer le dossier installer
-        iss_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Écrire le fichier
-        with open(iss_path, 'w', encoding='utf-8') as f:
-            f.write(iss_content)
-        
-        print(f"[OK] Fichier cree : {iss_path}")
-        return True
-        
-    except Exception as e:
-        print(f"[ERROR] Erreur generation .iss : {e}")
-        return False
-
-def create_license_file():
-    """Crée un fichier LICENSE.txt par défaut si absent"""
-    
-    try:
-        project_root = Path(__file__).parent.parent
-        license_path = project_root / "LICENSE.txt"
-        
-        if license_path.exists():
-            return True
-        
-        print("[INFO] Creation du fichier LICENSE.txt...")
-        
-        license_content = """LICENCE D'UTILISATION - BulletinPro
-
-Copyright (c) 2024 Votre Nom / Etablissement
-
-Permission est accordee d'utiliser ce logiciel a des fins educatives.
-
-CE LOGICIEL EST FOURNI "TEL QUEL", SANS GARANTIE D'AUCUNE SORTE.
-
-Pour toute question, contactez : votre@email.com
-"""
-        
-        with open(license_path, 'w', encoding='utf-8') as f:
-            f.write(license_content)
-        
-        print("[OK] LICENSE.txt cree")
-        return True
-        
-    except Exception as e:
-        print(f"[ERROR] Erreur creation LICENSE : {e}")
         return False
 
 def main():
@@ -195,16 +110,7 @@ def main():
     print("=" * 60)
     print("")
     
-    # 1. Créer les fichiers nécessaires
-    if not create_license_file():
-        print("\n[ERROR] Echec creation LICENSE")
-        return 1
-    
-    if not generate_iss_file():
-        print("\n[ERROR] Echec generation .iss")
-        return 1
-    
-    # 2. Préparer la structure
+    # Préparer la structure
     if not create_windows_structure():
         print("\n[ERROR] Build Windows echoue")
         return 1
