@@ -2,24 +2,18 @@ name: 🚀 Build BulletinPro-Prof Multi-Platform
 
 on:
   push:
-    branches: 
-      - main
-      - develop
-    tags:
-      - 'v*.*.*'
+    branches: [ main, develop ]
+    tags: [ 'v*.*.*' ]
     paths-ignore:
       - '**.md'
       - 'docs/**'
       - '.gitignore'
-  
   pull_request:
-    branches: 
-      - main
-  
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version à builder'
+        description: 'Version à builder (ex: 1.2.3)'
         required: false
         default: '1.0.0'
 
@@ -31,170 +25,186 @@ permissions:
   contents: write
 
 jobs:
+  # ==================================================================
+  # ======================= WINDOWS BUILD =============================
+  # ==================================================================
   build-windows:
     name: 🪟 Build Windows
     runs-on: windows-latest
-    timeout-minutes: 30
-    
-    steps:
-    - name: 📥 Checkout du code source
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: 🐍 Installation de Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
-    
-    - name: 📦 Installation des dépendances
-      run: |
-        python -m pip install --upgrade pip setuptools wheel
-        pip install -r requirements.txt
-        pip install pillow
-      shell: pwsh
-    
-    - name: 🖼️ Génération des icônes
-      run: python scripts/create_icons.py
-      shell: pwsh
-    
-    - name: 🔨 Compilation PyInstaller
-      run: |
-        pyinstaller --noconfirm --clean --name "BulletinPro-Prof" --windowed --onefile --icon "assets/icons/logo.ico" --add-data "config.py;." --add-data "assets/icons;assets/icons" --hidden-import "flet" --hidden-import "flet.core" --hidden-import "fpdf" --hidden-import "supabase" main.py
-      shell: pwsh
-    
-    - name: 📦 Préparation structure Windows
-      run: python scripts/build_windows.py
-      shell: pwsh
-    
-    - name: 🛠️ Installation Inno Setup
-      run: choco install innosetup -y --no-progress
-      shell: pwsh
-    
-    - name: 🎁 Création installateur
-      run: |
-        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/windows.iss
-      shell: pwsh
-    
-    - name: 📤 Upload installateur Windows
-      uses: actions/upload-artifact@v4
-      with:
-        name: BulletinPro_Prof-Windows-Installer
-        path: dist/installers/BulletinPro-Prof_Setup_*.exe
-        retention-days: 30
-        if-no-files-found: warn
-    
-    - name: 📤 Upload portable Windows
-      uses: actions/upload-artifact@v4
-      with:
-        name: BulletinPro-Prof-Windows-Portable
-        path: dist/BulletinPro-Prof.exe
-        retention-days: 30
-        if-no-files-found: warn
+    timeout-minutes: 40
 
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: 📦 Install Python dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt pillow pyinstaller inno-setup
+
+      - name: 🖼️ Generate icons
+        shell: pwsh
+        run: python scripts/create_icons.py
+
+      - name: 🔨 PyInstaller build
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean `
+            --name "BulletinPro-Prof" `
+            --windowed --onefile `
+            --icon "assets/icons/logo.ico" `
+            --add-data "config.py;." `
+            --add-data "assets/icons;assets/icons" `
+            --hidden-import flet --hidden-import flet.core `
+            --hidden-import fpdf --hidden-import supabase `
+            main.py
+
+      - name: 📦 Prepare Windows folder structure
+        shell: pwsh
+        run: python scripts/build_windows.py
+
+      - name: 🎁 Create installer with Inno Setup
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/windows.iss
+
+      - name: 📤 Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: BulletinPro-Prof-Windows-Installer
+          path: dist/installers/BulletinPro-Prof_Setup_*.exe
+          retention-days: 30
+
+      - name: 📤 Upload Windows portable exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: BulletinPro-Prof-Windows-Portable
+          path: dist/BulletinPro-Prof.exe
+          retention-days: 30
+
+  # ==================================================================
+  # ======================= LINUX BUILD ===============================
+  # ==================================================================
   build-linux:
-    name: 🐧 Build Linux
+    name: 🐧 Build Linux (DEB + AppImage)
     runs-on: ubuntu-22.04
-    timeout-minutes: 30
-    
-    steps:
-    - name: 📥 Checkout du code source
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: 🐍 Installation de Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
-    
-    - name: 📦 Installation dépendances système
-      run: |
-        sudo apt-get update -qq
-        sudo apt-get install -y libgtk-3-0 libnotify4 dpkg-dev fakeroot
-    
-    - name: 📦 Installation dépendances Python
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pillow
-    
-    - name: 🖼️ Génération des icônes
-      run: python scripts/create_icons.py
-    
-    - name: 🔨 Compilation PyInstaller
-      run: |
-        pyinstaller --noconfirm --clean --name "bulletinpro-Prof" --windowed --onefile --icon "assets/icons/logo.png" --add-data "config.py:." --add-data "assets/icons:assets/icons" --hidden-import "flet" --hidden-import "flet.core" --hidden-import "fpdf" --hidden-import "supabase" main.py
-    
-    - name: 📦 Création structure .deb
-      run: python scripts/build_linux.py
-    
-    - name: 🎁 Build package .deb
-      run: |
-        cd dist
-        dpkg-deb --build bulletinpro-prof-1.0.0
-        mv bulletinpro-prof-1.0.0.deb BulletinPro-Prof-1.0.0-amd64.deb
-    
-    - name: 📤 Upload package .deb
-      uses: actions/upload-artifact@v4
-      with:
-        name: BulletinPro-Prof-Linux-DEB
-        path: dist/BulletinPro-Prof-*.deb
-        retention-days: 30
-        if-no-files-found: warn
-    
-    - name: 📤 Upload binaire Linux
-      uses: actions/upload-artifact@v4
-      with:
-        name: BulletinPro-Prof-Linux-Binary
-        path: dist/bulletinpro-prof
-        retention-days: 30
-        if-no-files-found: warn
+    timeout-minutes: 40
 
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: 📦 Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libgtk-3-0 libnotify4 dpkg-dev fakeroot patchelf \
+                                  libncurses6 libncursesw6 libtinfo6 \
+                                  wget xz-utils desktop-file-utils
+
+      - name: 📦 Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pillow pyinstaller
+
+      - name: 🖼️ Generate icons
+        run: python scripts/create_icons.py
+
+      - name: 🔨 PyInstaller build
+        run: |
+          pyinstaller --noconfirm --clean \
+            --name "bulletinpro-prof" \
+            --windowed --onefile \
+            --icon "assets/icons/logo.png" \
+            --add-data "config.py:." \
+            --add-data "assets/icons:assets/icons" \
+            --hidden-import flet --hidden-import flet.core \
+            --hidden-import fpdf --hidden-import supabase \
+            main.py
+
+      - name: 📦 Create DEB package
+        run: python scripts/build_linux.py
+
+      - name: 🏗️ Build DEB
+        run: |
+          VERSION=${{ github.event.inputs.version || github.ref_name || '1.0.0' }}
+          VERSION=${VERSION#v}
+          cd dist
+          fakeroot dpkg-deb --build bulletinpro-prof-"$VERSION"
+          mv bulletinpro-prof-"$VERSION".deb BulletinPro-Prof_"$VERSION"_amd64.deb
+
+      - name: 🏗️ Build AppImage (bonus)
+        uses: AppImage/appimage-builder-action@v1
+        with:
+          recipe: .appimage/AppImageBuilder.yml  # tu crées ce fichier si tu veux l'AppImage
+          # ou simplement skip si tu n’en veux pas
+
+      - name: 📤 Upload DEB
+        uses: actions/upload-artifact@v4
+        with:
+          name: BulletinPro-Prof-Linux-DEB
+          path: dist/BulletinPro-Prof_*.deb
+
+      - name: 📤 Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: BulletinPro-Prof-Linux-Binary
+          path: dist/bulletinpro-prof
+
+  # ==================================================================
+  # ========================= RELEASE =================================
+  # ==================================================================
   create-release:
-    name: 🎉 Création Release
+    name: 🎉 Create GitHub Release
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-    
+
     steps:
-    - name: 📥 Checkout
-      uses: actions/checkout@v4
-    
-    - name: 📥 Download Windows Installer
-      uses: actions/download-artifact@v4
-      with:
-        name: BulletinPro-Prof-Windows-Installer
-        path: ./release
-    
-    - name: 📥 Download Linux Package
-      uses: actions/download-artifact@v4
-      with:
-        name: BulletinPro-Prof-Linux-DEB
-        path: ./release
-    
-    - name: 🎉 Create GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: ./release/*
-        body: |
-          ## 🎉 BulletinPro-Prof ${{ github.ref_name }}
-          
-          ### 📥 Téléchargements
-          
-          **Windows** :
-          - Installateur complet : `BulletinPro-Prof_Setup_*.exe`
-          
-          **Linux** :
-          - Package Debian : `BulletinPro-Prof-*-amd64.deb`
-          
-          ### Installation
-          
-          **Windows** : Double-clic sur l'installateur
-          **Linux** : `sudo dpkg -i BulletinPro-Prof-*.deb`
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 📥 Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: 📂 List files (debug)
+        run: ls -R ./artifacts
+
+      - name: 🎉 Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./artifacts/**/*
+          body: |
+            ## 🚀 BulletinPro-Prof ${{ github.ref_name }}
+
+            ### 📥 Téléchargements
+
+            **Windows**
+            - Installateur : `BulletinPro-Prof_Setup_*.exe`
+            - Version portable : `BulletinPro-Prof.exe`
+
+            **Linux**
+            - Package Debian/Ubuntu : `BulletinPro-Prof_*_amd64.deb`
+            - Exécutable standalone : `bulletinpro-prof`
+
+            ### Installation
+            Windows → double-clic sur l'installateur  
+            Linux → `sudo dpkg -i BulletinPro-Prof_*.deb`
+          draft: false
+          prerelease: false
