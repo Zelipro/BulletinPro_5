@@ -41,7 +41,7 @@ def create_windows_structure():
         print(f"[INFO] Taille : {exe_path.stat().st_size / (1024*1024):.2f} MB")
         
         # Vérifier l'icône
-        icon_path = project_root / "assets" / "icons" / "app_icon.ico"
+        icon_path = project_root / "assets" / "icons" / "logo.ico"
         if not icon_path.exists():
             print("[ERROR] app_icon.ico introuvable")
             print("[INFO] Lancez d'abord create_icons.py")
@@ -56,11 +56,11 @@ def create_windows_structure():
         temp_dir.mkdir()
         
         # Copier l'exécutable
-        shutil.copy2(exe_path, temp_dir / "BulletinPro.exe")
+        shutil.copy2(exe_path, temp_dir / "BulletinPro_Prof.exe")
         print("[OK] Executable copie")
         
         # Copier l'icône
-        icon_dest = temp_dir / "app_icon.ico"
+        icon_dest = temp_dir / "logo.ico"
         shutil.copy2(icon_path, icon_dest)
         print("[OK] Icone copiee")
         
@@ -100,7 +100,7 @@ def generate_iss_file():
         iss_content = """#define MyAppName "BulletinPro"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Votre Etablissement"
-#define MyAppExeName "BulletinPro.exe"
+#define MyAppExeName "BulletinPro_Prof.exe"
 
 [Setup]
 AppId={{8F9A3B2C-1D4E-5F6A-7B8C-9D0E1F2A3B4C}
