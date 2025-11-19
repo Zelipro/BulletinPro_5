@@ -1,4 +1,4 @@
-name: 🚀 Build BulletinPro Multi-Platform
+name: 🚀 Build BulletinPro_Pro Multi-Platform
 
 on:
   push:
@@ -24,7 +24,7 @@ on:
         default: '1.0.0'
 
 env:
-  APP_NAME: BulletinPro
+  APP_NAME: BulletinPro_Pro
   PYTHON_VERSION: '3.11'
 
 permissions:
@@ -80,16 +80,16 @@ jobs:
     - name: 📤 Upload installateur Windows
       uses: actions/upload-artifact@v4
       with:
-        name: BulletinPro-Windows-Installer
-        path: dist/installers/BulletinPro_Setup_*.exe
+        name: BulletinPro_Prof-Windows-Installer
+        path: dist/installers/BulletinPro_Prof_Setup_*.exe
         retention-days: 30
         if-no-files-found: warn
     
     - name: 📤 Upload portable Windows
       uses: actions/upload-artifact@v4
       with:
-        name: BulletinPro-Windows-Portable
-        path: dist/BulletinPro.exe
+        name: BulletinPro_Prof-Windows-Portable
+        path: dist/BulletinPro_Prof.exe
         retention-days: 30
         if-no-files-found: warn
 
@@ -134,22 +134,22 @@ jobs:
     - name: 🎁 Build package .deb
       run: |
         cd dist
-        dpkg-deb --build bulletinpro-1.0.0
-        mv bulletinpro-1.0.0.deb BulletinPro-1.0.0-amd64.deb
+        dpkg-deb --build bulletinpro_prof-1.0.0
+        mv bulletinpro_prof-1.0.0.deb BulletinPro_Prof-1.0.0-amd64.deb
     
     - name: 📤 Upload package .deb
       uses: actions/upload-artifact@v4
       with:
         name: BulletinPro-Linux-DEB
-        path: dist/BulletinPro-*.deb
+        path: dist/BulletinPro_Prof-*.deb
         retention-days: 30
         if-no-files-found: warn
     
     - name: 📤 Upload binaire Linux
       uses: actions/upload-artifact@v4
       with:
-        name: BulletinPro-Linux-Binary
-        path: dist/bulletinpro
+        name: BulletinPro_Prof-Linux-Binary
+        path: dist/bulletinpro_prof
         retention-days: 30
         if-no-files-found: warn
 
@@ -166,13 +166,13 @@ jobs:
     - name: 📥 Download Windows Installer
       uses: actions/download-artifact@v4
       with:
-        name: BulletinPro-Windows-Installer
+        name: BulletinPro_Prof-Windows-Installer
         path: ./release
     
     - name: 📥 Download Linux Package
       uses: actions/download-artifact@v4
       with:
-        name: BulletinPro-Linux-DEB
+        name: BulletinPro_Prof-Linux-DEB
         path: ./release
     
     - name: 🎉 Create GitHub Release
@@ -185,15 +185,15 @@ jobs:
           ### 📥 Téléchargements
           
           **Windows** :
-          - Installateur complet : `BulletinPro_Setup_*.exe`
+          - Installateur complet : `BulletinPro_Prof_Setup_*.exe`
           
           **Linux** :
-          - Package Debian : `BulletinPro-*-amd64.deb`
+          - Package Debian : `BulletinPro_Prof-*-amd64.deb`
           
           ### Installation
           
           **Windows** : Double-clic sur l'installateur
-          **Linux** : `sudo dpkg -i BulletinPro-*.deb`
+          **Linux** : `sudo dpkg -i BulletinPro_Prof-*.deb`
         draft: false
         prerelease: false
       env:
