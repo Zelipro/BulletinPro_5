@@ -52,7 +52,16 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools wheel
         pip install -r requirements.txt
+        pip install flet-desktop --force-reinstall
         pip install pillow
+        pip install pyinstaller
+      shell: pwsh
+    
+    - name: 🔍 Vérification de flet-desktop
+      run: |
+        Write-Host "=== Verification de flet-desktop ==="
+        python -c "import flet_desktop; print('✓ flet-desktop importe avec succes')"
+        pip show flet-desktop
       shell: pwsh
     
     - name: 🖼️ Génération des icônes
@@ -75,7 +84,27 @@ jobs:
     
     - name: 🔨 Compilation PyInstaller
       run: |
-        pyinstaller --noconfirm --clean --name "BulletinPro" --windowed --onefile --icon "assets/icons/logo.ico" --add-data "config.py;." --add-data "assets/icons;assets/icons" --hidden-import "flet" --hidden-import "flet.core" --hidden-import "fpdf" --hidden-import "supabase" main.py
+        pyinstaller --noconfirm --clean `
+          --name "BulletinPro_Prof" `
+          --windowed `
+          --onefile `
+          --icon "assets/icons/logo.ico" `
+          --add-data "config.py;." `
+          --add-data "assets/icons;assets/icons" `
+          --hidden-import "flet" `
+          --hidden-import "flet.core" `
+          --hidden-import "flet_core" `
+          --hidden-import "flet_runtime" `
+          --hidden-import "flet_desktop" `
+          --hidden-import "fpdf" `
+          --hidden-import "supabase" `
+          --hidden-import "postgrest" `
+          --hidden-import "PIL" `
+          --hidden-import "sqlite3" `
+          --collect-all "flet" `
+          --collect-all "flet_core" `
+          --collect-all "flet_runtime" `
+          main.py
       shell: pwsh
     
     - name: 🔍 Vérification de l'exécutable
@@ -151,16 +180,56 @@ jobs:
     
     - name: 📦 Installation dépendances Python
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip setuptools wheel
         pip install -r requirements.txt
+        pip install flet-desktop --force-reinstall
         pip install pillow
+        pip install pyinstaller
+    
+    - name: 🔍 Vérification de flet-desktop
+      run: |
+        echo "=== Vérification de flet-desktop ==="
+        python -c "import flet_desktop; print('✓ flet-desktop importé avec succès')"
+        pip show flet-desktop
     
     - name: 🖼️ Génération des icônes
       run: python scripts/create_icons.py
     
     - name: 🔨 Compilation PyInstaller
       run: |
-        pyinstaller --noconfirm --clean --name "bulletinpro" --windowed --onefile --icon "assets/icons/app_icon.png" --add-data "config.py:." --add-data "assets/icons:assets/icons" --hidden-import "flet" --hidden-import "flet.core" --hidden-import "fpdf" --hidden-import "supabase" main.py
+        pyinstaller --noconfirm --clean \
+          --name "bulletinpro" \
+          --windowed \
+          --onefile \
+          --icon "assets/icons/app_icon.png" \
+          --add-data "config.py:." \
+          --add-data "assets/icons:assets/icons" \
+          --hidden-import "flet" \
+          --hidden-import "flet.core" \
+          --hidden-import "flet_core" \
+          --hidden-import "flet_runtime" \
+          --hidden-import "flet_desktop" \
+          --hidden-import "fpdf" \
+          --hidden-import "supabase" \
+          --hidden-import "postgrest" \
+          --hidden-import "PIL" \
+          --hidden-import "sqlite3" \
+          --collect-all "flet" \
+          --collect-all "flet_core" \
+          --collect-all "flet_runtime" \
+          main.py
+    
+    - name: 🔍 Vérification du binaire
+      run: |
+        echo "=== Vérification du binaire ==="
+        if [ -f "dist/bulletinpro" ]; then
+          chmod +x dist/bulletinpro
+          size=$(du -h dist/bulletinpro | cut -f1)
+          echo "✓ bulletinpro : $size"
+        else
+          echo "✗ bulletinpro MANQUANT"
+          exit 1
+        fi
     
     - name: 📦 Création structure .deb
       run: python scripts/build_linux.py
@@ -228,6 +297,11 @@ jobs:
           
           **Windows** : Double-clic sur l'installateur
           **Linux** : `sudo dpkg -i BulletinPro-*.deb`
+          
+          ### ✅ Corrections
+          - Résolution du problème flet-desktop au démarrage
+          - Optimisation de la taille de l'exécutable
+          - Amélioration de la stabilité
         draft: false
         prerelease: false
       env:
