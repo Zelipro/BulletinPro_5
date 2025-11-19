@@ -31,7 +31,7 @@ def create_windows_structure():
         installers_dir.mkdir(parents=True, exist_ok=True)
         
         # Vérifier que l'exécutable existe
-        exe_path = dist_dir / "BulletinPro.exe"
+        exe_path = dist_dir / "BulletinPro_Prof.exe"
         if not exe_path.exists():
             print("[ERROR] BulletinPro.exe introuvable dans dist/")
             print("[INFO] Lancez d'abord PyInstaller pour creer l'executable")
@@ -55,7 +55,7 @@ def create_windows_structure():
         icon_copied = False
         
         # Essayer différents noms d'icônes
-        icon_names = ["logo.ico", "app_icon.ico"]
+        icon_names = ["logo.ico", "logo.ico"]
         for icon_name in icon_names:
             icon_path = icons_dir / icon_name
             if icon_path.exists():
