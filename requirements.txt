@@ -3,10 +3,11 @@
 # Version Professeur (Saisie de notes)
 # ================================
 
-# Core Framework
-flet>=0.24.0
-flet-core>=0.24.0
-flet-runtime>=0.24.0
+# Core Framework - VERSIONS EXACTES POUR STABILITÉ
+flet==0.24.1
+flet-core==0.24.1
+flet-runtime==0.24.1
+flet-desktop==0.24.1
 
 # Database & Cloud Backend
 supabase==2.9.0
@@ -23,18 +24,33 @@ pyinstaller==6.11.0
 requests==2.31.0
 
 # ================================
-# NOTES DE VERSION
+# NOTES IMPORTANTES
 # ================================
-# - flet : Framework UI principal
-# - supabase : Synchronisation cloud
-# - Pillow : Génération des icônes d'application
-# - pyinstaller : Création de l'exécutable Windows/Linux
-# - python-dotenv : Gestion des variables d'environnement
+# ⚠️ flet-desktop DOIT être installé AVANT PyInstaller
+# ⚠️ Ne pas utiliser >= pour flet, utiliser des versions exactes
+# ⚠️ Toutes les dépendances flet doivent avoir la même version
 
 # ================================
 # INSTALLATION
 # ================================
 # pip install -r requirements.txt
+
+# ================================
+# BUILD LOCAL
+# ================================
+# Windows:
+#   python scripts/build_fixed.py
+#
+# Linux:
+#   python scripts/build_fixed.py
+
+# ================================
+# DÉPENDANCES INCLUSES DANS PYTHON
+# ================================
+# - sqlite3 (base locale)
+# - threading
+# - json
+# - datetime
 
 # ================================
 # DIFFÉRENCES AVEC VERSION ADMIN
