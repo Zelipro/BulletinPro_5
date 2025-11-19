@@ -34,7 +34,7 @@ Section: education
 Priority: optional
 Architecture: amd64
 Depends: libc6 (>= 2.31), libgtk-3-0
-Maintainer: Zeli <zeli@bulletinpro.com>
+Maintainer: Zeli <eliseeatikpo10@gmail.com>
 Homepage: https://github.com/Zelipro/BulletinPro
 Description: Système de gestion de bulletins scolaires
  BulletinPro Prof est une application pour la saisie des notes
@@ -48,7 +48,7 @@ Description: Système de gestion de bulletins scolaires
     desktop = """[Desktop Entry]
 Version=1.0
 Type=Application
-Name=BulletinPro Prof
+Name=BulletinPro-Prof
 GenericName=Gestion de Notes Scolaires
 Comment=Saisie des notes pour les enseignants
 Exec=/usr/bin/bulletinpro-prof
@@ -78,7 +78,7 @@ exit 0
     
     # ✅ Copier l'exécutable (chercher les deux noms possibles)
     exe_found = False
-    for exe_name in ["bulletinpro_Prof", "bulletinpro_prof", "bulletinpro-prof"]:
+    for exe_name in ["bulletinpro-Prof", "bulletinpro-prof", "bulletinpro-prof"]:
         exe_src = dist_dir / exe_name
         if exe_src.exists():
             exe_dst = pkg_dir / "usr" / "bin" / "bulletinpro-prof"
