@@ -6,7 +6,8 @@ from supabase import create_client, Client
 from typing import Optional, Dict, Any
 import json
 
-from config import SUPABASE_URL, SUPABASE_KEY, LOCAL_DB, SYNC_INTERVAL
+from config import SUPABASE_URL, SUPABASE_KEY, SYNC_INTERVAL
+from db_manager import get_db_connection, init_all_tables  # ← MODIFIÉ
 
 
 class SyncManager:
@@ -14,7 +15,6 @@ class SyncManager:
     
     def __init__(self):
         self.supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        self.local_db = LOCAL_DB
         self.sync_thread: Optional[threading.Thread] = None
         self.is_syncing = False
         self.last_sync: Optional[datetime] = None
@@ -23,117 +23,11 @@ class SyncManager:
     
     def get_local_connection(self):
         """Obtenir une connexion à la base locale"""
-        return sqlite3.connect(self.local_db)
+        return get_db_connection()  # ← MODIFIÉ
     
     def init_local_tables(self):
-        """Initialise les tables locales avec structure complète"""
-        conn = self.get_local_connection()
-        cursor = conn.cursor()
-        
-        try:
-            # Table Users
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS User (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    identifiant TEXT NOT NULL UNIQUE,
-                    passwords TEXT NOT NULL,
-                    nom TEXT NOT NULL,
-                    prenom TEXT NOT NULL,
-                    email TEXT NOT NULL,
-                    telephone TEXT NOT NULL,
-                    etablissement TEXT NOT NULL,
-                    titre TEXT NOT NULL,
-                    theme TEXT DEFAULT 'light',
-                    language TEXT DEFAULT 'fr',
-                    last_sync TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            
-            # Table Students
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS Students (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nom TEXT NOT NULL,
-                    prenom TEXT NOT NULL,
-                    matricule TEXT NOT NULL,
-                    date_naissance TEXT NOT NULL,
-                    sexe TEXT NOT NULL,
-                    classe TEXT NOT NULL,
-                    etablissement TEXT NOT NULL,
-                    last_sync TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(matricule, etablissement)
-                )
-            """)
-            
-            # Table Matieres
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS Matieres (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nom TEXT NOT NULL,
-                    genre TEXT NOT NULL,
-                    etablissement TEXT NOT NULL,
-                    last_sync TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(nom, etablissement)
-                )
-            """)
-            
-            # Table Teacher
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS Teacher (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ident TEXT NOT NULL UNIQUE,
-                    pass TEXT NOT NULL,
-                    matiere TEXT NOT NULL,
-                    last_sync TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            
-            # Table Notes
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS Notes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    classe TEXT NOT NULL,
-                    matricule TEXT NOT NULL,
-                    matiere TEXT NOT NULL,
-                    coefficient TEXT NOT NULL,
-                    note_interrogation TEXT NOT NULL,
-                    note_devoir TEXT NOT NULL,
-                    note_composition TEXT NOT NULL,
-                    moyenne TEXT,
-                    date_saisie TEXT,
-                    last_sync TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(matricule, matiere, classe)
-                )
-            """)
-            
-            # Table Classes
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS Class (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nom TEXT NOT NULL,
-                    etablissement TEXT NOT NULL,
-                    last_sync TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(nom, etablissement)
-                )
-            """)
-            
-            # Table de métadonnées de sync
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS sync_metadata (
-                    table_name TEXT PRIMARY KEY,
-                    last_sync TIMESTAMP,
-                    sync_status TEXT DEFAULT 'pending'
-                )
-            """)
-            
-            conn.commit()
-            print("✅ Tables locales initialisées")
-            
-        except Exception as e:
-            print(f"❌ Erreur initialisation tables: {e}")
-            conn.rollback()
-        finally:
-            conn.close()
+        """Initialise les tables locales avec structure Supabase complète"""
+        init_all_tables()  # ← MODIFIÉ - Utilise la fonction centralisée
     
     # ============ SYNC AU LOGIN ============
     
@@ -212,8 +106,11 @@ class SyncManager:
             cursor = conn.cursor()
             
             for row in remote_data:
-                # Supprimer 'id' pour éviter les conflits
+                # Supprimer 'id' pour éviter les conflits (autoincrement)
                 row_data = {k: v for k, v in row.items() if k != 'id'}
+                
+                # Ajouter updated_at
+                row_data['updated_at'] = datetime.now().isoformat()
                 
                 # Construire la requête INSERT OR REPLACE
                 columns = ', '.join(row_data.keys())
@@ -223,15 +120,21 @@ class SyncManager:
                 if table_name == "User":
                     unique_check = "identifiant = ?"
                     unique_val = row_data.get('identifiant')
-                elif table_name in ["Students", "Notes"]:
+                elif table_name == "Students":
                     unique_check = "matricule = ? AND etablissement = ?"
                     unique_val = (row_data.get('matricule'), row_data.get('etablissement'))
+                elif table_name == "Notes":
+                    unique_check = "matricule = ? AND matiere = ? AND classe = ?"
+                    unique_val = (row_data.get('matricule'), row_data.get('matiere'), row_data.get('classe'))
                 elif table_name in ["Matieres", "Class"]:
                     unique_check = "nom = ? AND etablissement = ?"
                     unique_val = (row_data.get('nom'), row_data.get('etablissement'))
                 elif table_name == "Teacher":
                     unique_check = "ident = ?"
                     unique_val = row_data.get('ident')
+                elif table_name == "Trimestre_moyen_save":
+                    unique_check = "matricule = ? AND annee_scolaire = ? AND periode = ?"
+                    unique_val = (row_data.get('matricule'), row_data.get('annee_scolaire'), row_data.get('periode'))
                 else:
                     unique_check = None
                 
@@ -275,6 +178,8 @@ class SyncManager:
             
         except Exception as e:
             print(f"❌ Erreur sync {table_name}: {e}")
+            import traceback
+            traceback.print_exc()
     
     def sync_table_to_supabase(self, table_name: str, 
                                filter_col: str = None, 
@@ -307,9 +212,11 @@ class SyncManager:
             for row in local_data:
                 row_dict = dict(zip(columns, row))
                 
-                # Supprimer 'id' et 'last_sync' locaux
-                row_dict.pop('id', None)
-                row_dict.pop('last_sync', None)
+                # Supprimer 'id' local (Supabase gère son propre BIGSERIAL)
+                local_id = row_dict.pop('id', None)
+                
+                # Mettre à jour updated_at
+                row_dict['updated_at'] = datetime.now().isoformat()
                 
                 # Upsert vers Supabase
                 self.supabase.table(table_name).upsert(row_dict).execute()
@@ -318,6 +225,8 @@ class SyncManager:
             
         except Exception as e:
             print(f"❌ Erreur sync vers Supabase {table_name}: {e}")
+            import traceback
+            traceback.print_exc()
     
     # ============ SYNC AUTOMATIQUE ============
     
@@ -337,11 +246,14 @@ class SyncManager:
                     print(f"🔄 Sync auto - {datetime.now()}")
                     
                     # Sync bidirectionnel pour l'établissement
-                    tables = ["Students", "Matieres", "Teacher", "Notes", "Class", "User"]
+                    tables = ["Students", "Matieres", "Teacher", "Notes", "Class", "User", "Trimestre_moyen_save"]
                     
                     for table in tables:
                         # Depuis Supabase vers local
                         if table == "User":
+                            self.sync_table_from_supabase(table)
+                        elif table == "Trimestre_moyen_save":
+                            # Sync complète pour cette table (pas de filtre établissement)
                             self.sync_table_from_supabase(table)
                         else:
                             self.sync_table_from_supabase(
@@ -352,6 +264,8 @@ class SyncManager:
                         
                         # Depuis local vers Supabase
                         if table == "User":
+                            self.sync_table_to_supabase(table)
+                        elif table == "Trimestre_moyen_save":
                             self.sync_table_to_supabase(table)
                         else:
                             self.sync_table_to_supabase(
@@ -365,6 +279,8 @@ class SyncManager:
                     
                 except Exception as e:
                     print(f"❌ Erreur sync auto: {e}")
+                    import traceback
+                    traceback.print_exc()
                 
                 # Attendre 10 minutes
                 time.sleep(SYNC_INTERVAL)
