@@ -12,6 +12,7 @@ from Students import Gestion_Eleve_Liste
 from Note import Saisie_Notes
 #from Bulletin import Generation_Bulletin
 from sync_manager import sync_manager
+from db_manager import get_db_connection
 #-----
 
 
@@ -23,7 +24,7 @@ def Get_on_db_local(mention):
         donne = []
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             cur.execute("SELECT * FROM User")
             donne = cur.fetchall()
@@ -713,7 +714,7 @@ def get_user_preference(setting_name,Donner):
     """Récupère les préférences utilisateur"""
     con = None
     try:
-        con = sqlite3.connect("base.db")
+        con = get_db_connection()
         cur = con.cursor()
         
         if Donner and Donner.get("ident") == "Deg":
@@ -749,7 +750,7 @@ def User_Config(page, Donner):  # Ajout du paramètre Donner
     def save_preferences(theme, language, dialog):
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             
             # Table pour développeur
@@ -832,7 +833,7 @@ def New_admin(page,Donner):
     def Verif_ident_in(Ident , passs):
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             
             # Créer la table School
@@ -869,7 +870,7 @@ def New_admin(page,Donner):
     def save_admin(fields, dialog):
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             # Insérer l'admin
             cur.execute("INSERT INTO User (identifiant, passwords, nom, prenom, email, telephone,  etablissement , titre)  VALUES (?, ?, ?, ?, ?, ?, ?, 'admin')",tuple(fields))
@@ -987,7 +988,7 @@ def Setting(page, Donner=None):
         """Récupère une information depuis la table User"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             cur.execute(
                 f"SELECT {Ident} FROM User WHERE identifiant = ? AND titre = ? AND passwords = ?",
@@ -1007,7 +1008,7 @@ def Setting(page, Donner=None):
         """Enregistre les paramètres selon le type d'utilisateur"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             
             # Déterminer le thème
@@ -1489,7 +1490,7 @@ def get_school_setting(setting_name,Info):
     title = Info.get("role")
     table = "User"
     try:
-        con = sqlite3.connect("base.db")
+        con = get_db_connection()
         cur = con.cursor()
         cur.execute(f"SELECT {setting_name} FROM {table} WHERE identifiant = ? AND titre = ? ",(Ident , title))
         result = cur.fetchone()
