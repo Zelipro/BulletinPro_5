@@ -5,6 +5,7 @@ import os
 import shutil
 from pathlib import Path
 from time import sleep
+from db_manager import get_db_connection
 
 def Gestion_Eleve(page, Donner , view_only=False):
     Dialog = ZeliDialog2(page)
@@ -13,7 +14,7 @@ def Gestion_Eleve(page, Donner , view_only=False):
         """Récupère une information depuis la table User"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             cur.execute(
                 f"SELECT {Ident} FROM User WHERE identifiant = ? AND titre = ? AND passwords = ?",
@@ -39,7 +40,7 @@ def Gestion_Eleve(page, Donner , view_only=False):
         #Vue que les etudiants ne sont pas des user on les met dans une Autre base de donné
         con = None
         try:
-            con = sqlite3.connect("base.db") #Connection de la base de donné
+            con = get_db_connection() #Connection de la base de donné
             #===== AU cas ou la base de donner n'est pas encore creer creons la ====
             cur = con.cursor()
             cur.execute(f"CREATE TABLE IF NOT EXISTS Students(nom TEXT NOT NULL , prenom TEXT NOT NULL , matricule TEXT NOT NULL , date_naissance TEXT NOT NULL , sexe TEXT NOT NULL , classe TEXT NOT NULL,etablissement TEXT NOT NULL)")
@@ -103,7 +104,7 @@ def Gestion_Eleve(page, Donner , view_only=False):
         
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             
             #==== Create la table si elle n'existe pas =====
@@ -175,7 +176,7 @@ def Gestion_Eleve(page, Donner , view_only=False):
                 
                 etablissement = etablissement_data[0][0]
 
-                con = sqlite3.connect("base.db")
+                con = get_db_connection()
                 cur = con.cursor()
                 
                 # Vérification si existe dans User
@@ -313,7 +314,7 @@ def Gestion_Eleve(page, Donner , view_only=False):
         def save_changes(e, dialog):
             con = None
             try:
-                con = sqlite3.connect("base.db")
+                con = get_db_connection()
                 cur = con.cursor()
                 
                 cur.execute("""
@@ -432,7 +433,7 @@ def Gestion_Eleve(page, Donner , view_only=False):
         """Exécute la suppression"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             
             # Suppression de User
@@ -592,7 +593,7 @@ def Gestion_Eleve_Liste(page, Donner):
         """Récupère une information depuis la table User"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             cur.execute(
                 f"SELECT {Ident} FROM User WHERE identifiant = ? AND titre = ? AND passwords = ?",
@@ -618,7 +619,7 @@ def Gestion_Eleve_Liste(page, Donner):
         #Vue que les etudiants ne sont pas des user on les met dans une Autre base de donné
         con = None
         try:
-            con = sqlite3.connect("base.db") #Connection de la base de donné
+            con = get_db_connection() #Connection de la base de donné
             #===== AU cas ou la base de donner n'est pas encore creer creons la ====
             cur = con.cursor()
             cur.execute(f"CREATE TABLE IF NOT EXISTS Students(nom TEXT NOT NULL , prenom TEXT NOT NULL , matricule TEXT NOT NULL , date_naissance TEXT NOT NULL , sexe TEXT NOT NULL , classe TEXT NOT NULL,etablissement TEXT NOT NULL)")
