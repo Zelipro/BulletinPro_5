@@ -121,7 +121,6 @@ def init_all_tables():
         # Table Students
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Students (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nom TEXT NOT NULL,
                 prenom TEXT NOT NULL,
                 matricule TEXT NOT NULL,
@@ -138,7 +137,6 @@ def init_all_tables():
         # Table Matieres
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Matieres (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nom TEXT NOT NULL,
                 genre TEXT NOT NULL,
                 etablissement TEXT NOT NULL,
@@ -151,7 +149,6 @@ def init_all_tables():
         # Table Teacher
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Teacher (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ident TEXT NOT NULL UNIQUE,
                 pass TEXT NOT NULL,
                 matiere TEXT NOT NULL,
@@ -163,7 +160,6 @@ def init_all_tables():
         # Table Notes
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Notes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 classe TEXT NOT NULL,
                 matricule TEXT NOT NULL,
                 matiere TEXT NOT NULL,
@@ -191,7 +187,6 @@ def init_all_tables():
         # Table Class
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Class (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nom TEXT NOT NULL,
                 etablissement TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
