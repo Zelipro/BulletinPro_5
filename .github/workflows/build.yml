@@ -2,18 +2,24 @@ name: 🚀 Build BulletinPro-Prof Multi-Platform
 
 on:
   push:
-    branches: [ main, develop ]
-    tags: [ 'v*.*.*' ]
+    branches: 
+      - main
+      - develop
+    tags: 
+      - 'v*.*.*'
     paths-ignore:
       - '**.md'
       - 'docs/**'
       - '.gitignore'
+  
   pull_request:
-    branches: [ main ]
+    branches: 
+      - main
+  
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version à builder (ex: 1.2.3)'
+        description: 'Version à builder (ex: 1.0.0)'
         required: false
         default: '1.0.0'
 
@@ -26,35 +32,40 @@ permissions:
 
 jobs:
   # ==================================================================
-  # ======================= WINDOWS BUILD =============================
+  # ======================= WINDOWS BUILD ============================
   # ==================================================================
   build-windows:
     name: 🪟 Build Windows
     runs-on: windows-latest
-    timeout-minutes: 40
-
+    timeout-minutes: 45
+    
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
+      
       - name: 🐍 Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-
+      
       - name: 📦 Install Python dependencies
         shell: pwsh
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -r requirements.txt pillow pyinstaller inno-setup
-
+          pip install -r requirements.txt
+          pip install pillow pyinstaller
+      
       - name: 🖼️ Generate icons
         shell: pwsh
-        run: python scripts/create_icons.py
-
+        run: |
+          if (!(Test-Path "assets/icons")) {
+            New-Item -ItemType Directory -Force -Path "assets/icons"
+          }
+          python scripts/create_icons.py
+      
       - name: 🔨 PyInstaller build
         shell: pwsh
         run: |
@@ -64,68 +75,110 @@ jobs:
             --icon "assets/icons/logo.ico" `
             --add-data "config.py;." `
             --add-data "assets/icons;assets/icons" `
-            --hidden-import flet --hidden-import flet.core `
-            --hidden-import fpdf --hidden-import supabase `
+            --hidden-import flet `
+            --hidden-import flet.core `
+            --hidden-import flet_core `
+            --hidden-import flet_runtime `
+            --hidden-import supabase `
+            --hidden-import PIL `
+            --hidden-import sqlite3 `
+            --collect-all flet `
+            --collect-all flet_core `
+            --collect-all flet_runtime `
             main.py
-
+      
+      - name: ✅ Verify executable
+        shell: pwsh
+        run: |
+          $exePath = "dist/BulletinPro-Prof.exe"
+          if (Test-Path $exePath) {
+            $size = (Get-Item $exePath).Length / 1MB
+            Write-Host "✅ Executable created: $([math]::Round($size, 2)) MB"
+          } else {
+            Write-Error "❌ Executable not found!"
+            exit 1
+          }
+      
       - name: 📦 Prepare Windows folder structure
         shell: pwsh
         run: python scripts/build_windows.py
-
+      
+      - name: 🛠️ Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+      
       - name: 🎁 Create installer with Inno Setup
         shell: pwsh
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/windows.iss
-
+          $version = "${{ github.event.inputs.version || github.ref_name || '1.0.0' }}"
+          $version = $version -replace '^v', ''
+          Write-Host "Building installer version: $version"
+          
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
+            /DAPP_VERSION=$version `
+            installer/windows.iss
+      
       - name: 📤 Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
           name: BulletinPro-Prof-Windows-Installer
           path: dist/installers/BulletinPro-Prof_Setup_*.exe
           retention-days: 30
-
+          if-no-files-found: error
+      
       - name: 📤 Upload Windows portable exe
         uses: actions/upload-artifact@v4
         with:
           name: BulletinPro-Prof-Windows-Portable
           path: dist/BulletinPro-Prof.exe
           retention-days: 30
+          if-no-files-found: error
 
   # ==================================================================
-  # ======================= LINUX BUILD ===============================
+  # ======================= LINUX BUILD ==============================
   # ==================================================================
   build-linux:
-    name: 🐧 Build Linux (DEB + AppImage)
+    name: 🐧 Build Linux (DEB)
     runs-on: ubuntu-22.04
-    timeout-minutes: 40
-
+    timeout-minutes: 45
+    
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
+      
       - name: 🐍 Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-
+      
       - name: 📦 Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y libgtk-3-0 libnotify4 dpkg-dev fakeroot patchelf \
-                                  libncurses6 libncursesw6 libtinfo6 \
-                                  wget xz-utils desktop-file-utils
-
+          sudo apt-get install -y \
+            libgtk-3-0 \
+            libnotify4 \
+            dpkg-dev \
+            fakeroot \
+            patchelf \
+            libncurses6 \
+            libncursesw6 \
+            libtinfo6 \
+            desktop-file-utils
+      
       - name: 📦 Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pillow pyinstaller
-
+          pip install -r requirements.txt
+          pip install pillow pyinstaller
+      
       - name: 🖼️ Generate icons
-        run: python scripts/create_icons.py
-
+        run: |
+          mkdir -p assets/icons
+          python scripts/create_icons.py
+      
       - name: 🔨 PyInstaller build
         run: |
           pyinstaller --noconfirm --clean \
@@ -134,77 +187,162 @@ jobs:
             --icon "assets/icons/logo.png" \
             --add-data "config.py:." \
             --add-data "assets/icons:assets/icons" \
-            --hidden-import flet --hidden-import flet.core \
-            --hidden-import fpdf --hidden-import supabase \
+            --hidden-import flet \
+            --hidden-import flet.core \
+            --hidden-import flet_core \
+            --hidden-import flet_runtime \
+            --hidden-import supabase \
+            --hidden-import PIL \
+            --hidden-import sqlite3 \
+            --collect-all flet \
+            --collect-all flet_core \
+            --collect-all flet_runtime \
             main.py
-
-      - name: 📦 Create DEB package
+      
+      - name: ✅ Verify executable
+        run: |
+          if [ -f "dist/bulletinpro-prof" ]; then
+            chmod +x dist/bulletinpro-prof
+            size=$(du -h dist/bulletinpro-prof | cut -f1)
+            echo "✅ Executable created: $size"
+          else
+            echo "❌ Executable not found!"
+            exit 1
+          fi
+      
+      - name: 📦 Create DEB package structure
         run: python scripts/build_linux.py
-
-      - name: 🏗️ Build DEB
+      
+      - name: 🏗️ Build DEB package
         run: |
           VERSION=${{ github.event.inputs.version || github.ref_name || '1.0.0' }}
           VERSION=${VERSION#v}
+          echo "Building DEB version: $VERSION"
+          
           cd dist
-          fakeroot dpkg-deb --build bulletinpro-prof-"$VERSION"
-          mv bulletinpro-prof-"$VERSION".deb BulletinPro-Prof_"$VERSION"_amd64.deb
-
-      - name: 🏗️ Build AppImage (bonus)
-        uses: AppImage/appimage-builder-action@v1
-        with:
-          recipe: .appimage/AppImageBuilder.yml  # tu crées ce fichier si tu veux l'AppImage
-          # ou simplement skip si tu n’en veux pas
-
-      - name: 📤 Upload DEB
+          
+          # Vérifier que le dossier existe (avec tirets)
+          if [ -d "bulletinpro-prof-$VERSION" ]; then
+            PKG_DIR="bulletinpro-prof-$VERSION"
+          else
+            echo "❌ Package directory not found!"
+            ls -la
+            exit 1
+          fi
+          
+          # Construire le .deb
+          fakeroot dpkg-deb --build "$PKG_DIR"
+          
+          # Renommer proprement
+          mv "${PKG_DIR}.deb" "BulletinPro-Prof_${VERSION}_amd64.deb"
+          
+          # Vérifier
+          if [ -f "BulletinPro-Prof_${VERSION}_amd64.deb" ]; then
+            size=$(du -h "BulletinPro-Prof_${VERSION}_amd64.deb" | cut -f1)
+            echo "✅ DEB package created: $size"
+            dpkg-deb --info "BulletinPro-Prof_${VERSION}_amd64.deb"
+          else
+            echo "❌ DEB package creation failed!"
+            exit 1
+          fi
+      
+      - name: 📤 Upload DEB package
         uses: actions/upload-artifact@v4
         with:
           name: BulletinPro-Prof-Linux-DEB
-          path: dist/BulletinPro-Prof_*.deb
-
-      - name: 📤 Upload binary
+          path: dist/BulletinPro-Prof_*_amd64.deb
+          retention-days: 30
+          if-no-files-found: error
+      
+      - name: 📤 Upload Linux binary
         uses: actions/upload-artifact@v4
         with:
           name: BulletinPro-Prof-Linux-Binary
           path: dist/bulletinpro-prof
+          retention-days: 30
+          if-no-files-found: error
 
   # ==================================================================
-  # ========================= RELEASE =================================
+  # ========================= RELEASE ================================
   # ==================================================================
   create-release:
     name: 🎉 Create GitHub Release
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-
+    
     steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+      
       - name: 📥 Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
-
+      
       - name: 📂 List files (debug)
-        run: ls -R ./artifacts
-
-      - name: 🎉 Create Release
+        run: |
+          echo "=== Artifacts structure ==="
+          ls -R ./artifacts
+          echo "==========================="
+      
+      - name: 📋 Prepare release files
+        run: |
+          mkdir -p ./release
+          find ./artifacts -type f \( -name "*.exe" -o -name "*.deb" \) -exec cp {} ./release/ \;
+          echo "=== Release files ==="
+          ls -lh ./release
+          echo "===================="
+      
+      - name: 🎉 Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            ./artifacts/**/*
+          files: ./release/*
           body: |
             ## 🚀 BulletinPro-Prof ${{ github.ref_name }}
-
-            ### 📥 Téléchargements
-
-            **Windows**
-            - Installateur : `BulletinPro-Prof_Setup_*.exe`
-            - Version portable : `BulletinPro-Prof.exe`
-
-            **Linux**
-            - Package Debian/Ubuntu : `BulletinPro-Prof_*_amd64.deb`
-            - Exécutable standalone : `bulletinpro-prof`
-
-            ### Installation
-            Windows → double-clic sur l'installateur  
-            Linux → `sudo dpkg -i BulletinPro-Prof_*.deb`
+            
+            ### 📥 Téléchargements disponibles
+            
+            #### 🪟 Windows
+            - **Installateur complet** : `BulletinPro-Prof_Setup_*.exe`
+              - Installation guidée avec raccourcis
+              - Recommandé pour la plupart des utilisateurs
+            - **Version portable** : `BulletinPro-Prof.exe`
+              - Aucune installation requise
+              - Idéal pour clé USB
+            
+            #### 🐧 Linux (Ubuntu/Debian)
+            - **Package Debian** : `BulletinPro-Prof_*_amd64.deb`
+              - Pour Ubuntu 20.04+, Debian 11+
+              - Installation : `sudo dpkg -i BulletinPro-Prof_*.deb`
+            - **Binaire standalone** : `bulletinpro-prof`
+              - Exécutable direct
+              - Nécessite : `chmod +x bulletinpro-prof && ./bulletinpro-prof`
+            
+            ### 📋 Prérequis
+            
+            **Windows** : Windows 10/11 (64-bit)
+            **Linux** : Ubuntu 20.04+, Debian 11+, ou distributions compatibles
+            
+            ### 🆕 Nouveautés de cette version
+            
+            - Synchronisation cloud avec Supabase
+            - Interface utilisateur améliorée
+            - Gestion multi-plateforme des données
+            - Corrections de bugs et optimisations
+            
+            ### 📚 Documentation
+            
+            - [Guide d'utilisation](https://github.com/${{ github.repository }}/wiki)
+            - [FAQ](https://github.com/${{ github.repository }}/wiki/FAQ)
+            - [Rapporter un bug](https://github.com/${{ github.repository }}/issues)
+            
+            ---
+            
+            **Note** : Cette version est destinée aux enseignants (saisie de notes).
+            Pour la version administrateur complète, consultez [BulletinPro](https://github.com/Zelipro/BulletinPro).
           draft: false
           prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
