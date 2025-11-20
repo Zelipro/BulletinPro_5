@@ -5,6 +5,7 @@ import os
 import shutil
 from pathlib import Path
 from time import sleep
+from db_manager import get_db_connection
 
 def Stats(page, Donner=None):
     """Statistiques selon le type d'utilisateur (creator/admin)
@@ -35,7 +36,7 @@ def Stats(page, Donner=None):
         """Récupère une information depuis la table User"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             cur.execute(
                 f"SELECT {Ident} FROM User WHERE identifiant = ? AND titre = ? AND passwords = ?",
@@ -63,7 +64,7 @@ def Stats(page, Donner=None):
         """Charge tous les administrateurs"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             cur.execute("SELECT * FROM User WHERE titre = 'admin'")
             return cur.fetchall()
@@ -117,7 +118,8 @@ def Stats(page, Donner=None):
         def save_changes(e, dialog):
             con = None
             try:
-                con = sqlite3.connect("base.db")
+                con = get_db_connection()
+
                 cur = con.cursor()
                 
                 cur.execute("""
@@ -296,7 +298,8 @@ def Stats(page, Donner=None):
         """Exécute la suppression d'un admin uniquement"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
+
             cur = con.cursor()
             
             cur.execute("DELETE FROM User WHERE identifiant = ? AND titre = 'admin'", (admin[1],))
@@ -317,7 +320,8 @@ def Stats(page, Donner=None):
         """Exécute la suppression de tout un établissement"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
+
             cur = con.cursor()
             
             # Supprimer tous les utilisateurs de l'établissement
@@ -411,7 +415,8 @@ def Stats(page, Donner=None):
         
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
+
             cur = con.cursor()
             cur.execute(
                 "SELECT * FROM User WHERE etablissement = ? AND titre = 'prof'",
@@ -430,7 +435,8 @@ def Stats(page, Donner=None):
         prof_subject = "N/A"
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
+
             cur = con.cursor()
             cur.execute("SELECT matiere FROM Teacher WHERE ident = ?", (teacher[1],))
             result = cur.fetchone()
@@ -484,7 +490,8 @@ def Stats(page, Donner=None):
         def save_changes(e, dialog):
             con = None
             try:
-                con = sqlite3.connect("base.db")
+                con = get_db_connection()
+
                 cur = con.cursor()
                 
                 cur.execute("""
@@ -598,7 +605,8 @@ def Stats(page, Donner=None):
         """Exécute la suppression d'un enseignant"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
+
             cur = con.cursor()
             
             # Supprimer de User
@@ -626,7 +634,8 @@ def Stats(page, Donner=None):
         prof_subject = "N/A"
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
+
             cur = con.cursor()
             cur.execute("SELECT matiere FROM Teacher WHERE ident = ?", (teacher[1],))
             result = cur.fetchone()
