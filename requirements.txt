@@ -8,7 +8,7 @@ flet-core>=0.24.0
 flet-runtime>=0.24.0
 
 # PDF Generation
-fpdf2==2.8.1
+#fpdf2==2.8.1
 
 # Database & Cloud Backend
 supabase==2.9.0
