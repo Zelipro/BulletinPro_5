@@ -5,6 +5,7 @@ import os
 import shutil
 from pathlib import Path
 from time import sleep
+from db_manager import get_db_connection
 
 def Saisie_Notes(page, Donner):
     """Saisie des notes par le professeur pour sa matière uniquement"""
@@ -22,7 +23,7 @@ def Saisie_Notes(page, Donner):
         """Récupère une information depuis la table User"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             cur.execute(
                 f"SELECT {Ident} FROM User WHERE identifiant = ? AND titre = ? AND passwords = ?",
@@ -42,7 +43,7 @@ def Saisie_Notes(page, Donner):
         """Récupère la matière du professeur"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             cur.execute("SELECT matiere FROM Teacher WHERE ident = ?", (Donner.get("ident"),))
             result = cur.fetchone()
@@ -61,7 +62,7 @@ def Saisie_Notes(page, Donner):
         
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             cur.execute("""
                 SELECT DISTINCT classe, COUNT(*) as effectif
@@ -85,7 +86,7 @@ def Saisie_Notes(page, Donner):
         
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             cur.execute("""
                 SELECT * FROM Students 
@@ -107,7 +108,7 @@ def Saisie_Notes(page, Donner):
         
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             # Pour l'instant on retourne un coefficient par défaut
             # Vous pouvez ajouter une colonne coefficient dans la table Matieres
@@ -122,7 +123,7 @@ def Saisie_Notes(page, Donner):
         """Vérifie si une note existe déjà pour cet élève dans cette matière"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             
             # Créer la table Notes si elle n'existe pas
@@ -312,7 +313,7 @@ def Saisie_Notes(page, Donner):
         """Exécute la suppression des notes"""
         con = None
         try:
-            con = sqlite3.connect("base.db")
+            con = get_db_connection()
             cur = con.cursor()
             
             cur.execute("""
@@ -505,7 +506,7 @@ def Saisie_Notes(page, Donner):
             """Enregistre les notes dans la base de données"""
             con = None
             try:
-                con = sqlite3.connect("base.db")
+                con = get_db_connection()
                 cur = con.cursor()
                 
                 # Calculer la moyenne
@@ -865,7 +866,7 @@ def Saisie_Notes(page, Donner):
         if matiere:
             con = None
             try:
-                con = sqlite3.connect("base.db")
+                con = get_db_connection()
                 cur = con.cursor()
                 cur.execute("""
                     SELECT COUNT(*) FROM Notes 
