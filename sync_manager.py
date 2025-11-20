@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any
 import json
 
 from config import SUPABASE_URL, SUPABASE_KEY, SYNC_INTERVAL
-from db_manager import get_db_connection, init_all_tables  # ← MODIFIÉ
+from db_manager import get_db_connection, init_all_tables
 
 
 class SyncManager:
@@ -23,11 +23,11 @@ class SyncManager:
     
     def get_local_connection(self):
         """Obtenir une connexion à la base locale"""
-        return get_db_connection()  # ← MODIFIÉ
+        return get_db_connection()
     
     def init_local_tables(self):
         """Initialise les tables locales avec structure Supabase complète"""
-        init_all_tables()  # ← MODIFIÉ - Utilise la fonction centralisée
+        init_all_tables()
     
     # ============ SYNC AU LOGIN ============
     
@@ -35,13 +35,13 @@ class SyncManager:
         """
         Synchronisation lors de la connexion
         1. Charge TOUS les Users
-        2. Après login, charge données de l'établissement
         """
         try:
             print("🔄 Sync au login - Chargement Users...")
             
-            # Charger tous les users
+            # Charger tous les users et des prof
             self.sync_table_from_supabase("User")
+            self.sync_table_from_supabase("Teacher")
             
             if callback:
                 callback("Users chargés")
@@ -86,6 +86,7 @@ class SyncManager:
                                   filter_val: str = None):
         """
         Synchronise une table depuis Supabase vers local
+        ✅ IMPORTANT: Ignore les colonnes 'id' de Supabase
         """
         try:
             # Récupérer depuis Supabase
@@ -106,20 +107,16 @@ class SyncManager:
             cursor = conn.cursor()
             
             for row in remote_data:
-                # Supprimer 'id' pour éviter les conflits (autoincrement)
+                # ✅ SUPPRIMER 'id' DE SUPABASE (on n'en a pas besoin localement)
                 row_data = {k: v for k, v in row.items() if k != 'id'}
                 
-                # Ajouter updated_at
+                # Mettre à jour updated_at
                 row_data['updated_at'] = datetime.now().isoformat()
-                
-                # Construire la requête INSERT OR REPLACE
-                columns = ', '.join(row_data.keys())
-                placeholders = ', '.join(['?' for _ in row_data])
                 
                 # Déterminer la clé unique selon la table
                 if table_name == "User":
                     unique_check = "identifiant = ?"
-                    unique_val = row_data.get('identifiant')
+                    unique_val = (row_data.get('identifiant'),)
                 elif table_name == "Students":
                     unique_check = "matricule = ? AND etablissement = ?"
                     unique_val = (row_data.get('matricule'), row_data.get('etablissement'))
@@ -131,7 +128,7 @@ class SyncManager:
                     unique_val = (row_data.get('nom'), row_data.get('etablissement'))
                 elif table_name == "Teacher":
                     unique_check = "ident = ?"
-                    unique_val = row_data.get('ident')
+                    unique_val = (row_data.get('ident'),)
                 elif table_name == "Trimestre_moyen_save":
                     unique_check = "matricule = ? AND annee_scolaire = ? AND periode = ?"
                     unique_val = (row_data.get('matricule'), row_data.get('annee_scolaire'), row_data.get('periode'))
@@ -139,35 +136,29 @@ class SyncManager:
                     unique_check = None
                 
                 if unique_check:
-                    # Vérifier existence
-                    if isinstance(unique_val, tuple):
-                        cursor.execute(f"SELECT id FROM {table_name} WHERE {unique_check}", unique_val)
-                    else:
-                        cursor.execute(f"SELECT id FROM {table_name} WHERE {unique_check}", (unique_val,))
-                    
+                    # Vérifier si la ligne existe déjà
+                    cursor.execute(f"SELECT 1 FROM {table_name} WHERE {unique_check}", unique_val)
                     exists = cursor.fetchone()
                     
                     if exists:
                         # UPDATE
                         set_clause = ', '.join([f"{k} = ?" for k in row_data.keys()])
-                        values = list(row_data.values())
-                        
-                        if isinstance(unique_val, tuple):
-                            values.extend(unique_val)
-                            cursor.execute(f"UPDATE {table_name} SET {set_clause} WHERE {unique_check}", values)
-                        else:
-                            values.append(unique_val)
-                            cursor.execute(f"UPDATE {table_name} SET {set_clause} WHERE {unique_check}", values)
+                        values = list(row_data.values()) + list(unique_val)
+                        cursor.execute(f"UPDATE {table_name} SET {set_clause} WHERE {unique_check}", values)
                     else:
                         # INSERT
+                        columns = ', '.join(row_data.keys())
+                        placeholders = ', '.join(['?' for _ in row_data])
                         cursor.execute(
                             f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})",
                             list(row_data.values())
                         )
                 else:
                     # INSERT simple
+                    columns = ', '.join(row_data.keys())
+                    placeholders = ', '.join(['?' for _ in row_data])
                     cursor.execute(
-                        f"INSERT OR REPLACE INTO {table_name} ({columns}) VALUES ({placeholders})",
+                        f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})",
                         list(row_data.values())
                     )
             
@@ -186,6 +177,7 @@ class SyncManager:
                                filter_val: str = None):
         """
         Synchronise une table depuis local vers Supabase
+        ✅ IMPORTANT: N'envoie QUE les colonnes existantes (sans 'id')
         """
         try:
             conn = self.get_local_connection()
@@ -206,22 +198,36 @@ class SyncManager:
             conn.close()
             
             if not local_data:
+                print(f"ℹ️ Aucune donnée à syncer pour {table_name}")
                 return
             
-            # Préparer les données pour Supabase
+            synced_count = 0
+            skipped_count = 0
+            
             for row in local_data:
                 row_dict = dict(zip(columns, row))
                 
-                # Supprimer 'id' local (Supabase gère son propre BIGSERIAL)
+                # ✅ Supprimer 'id' local avant d'envoyer à Supabase
                 local_id = row_dict.pop('id', None)
                 
                 # Mettre à jour updated_at
                 row_dict['updated_at'] = datetime.now().isoformat()
                 
-                # Upsert vers Supabase
-                self.supabase.table(table_name).upsert(row_dict).execute()
+                try:
+                    # Utiliser upsert pour gérer les doublons
+                    self.supabase.table(table_name).upsert(row_dict).execute()
+                    synced_count += 1
+                    
+                except Exception as e:
+                    # Si c'est un doublon, ignorer et continuer
+                    if 'duplicate key' in str(e).lower() or '23505' in str(e):
+                        print(f"⚠️ Doublon ignoré dans {table_name}")
+                        skipped_count += 1
+                    else:
+                        print(f"❌ Erreur upsert: {e}")
+                        raise
             
-            print(f"✅ {table_name}: {len(local_data)} lignes envoyées à Supabase")
+            print(f"✅ {table_name}: {synced_count} synced, {skipped_count} doublons ignorés")
             
         except Exception as e:
             print(f"❌ Erreur sync vers Supabase {table_name}: {e}")
@@ -231,9 +237,7 @@ class SyncManager:
     # ============ SYNC AUTOMATIQUE ============
     
     def start_auto_sync(self, etablissement: str):
-        """
-        Démarre la synchronisation automatique toutes les 10 minutes
-        """
+        """Démarre la synchronisation automatique"""
         if self.is_syncing:
             print("⚠️ Sync déjà en cours")
             return
@@ -245,29 +249,18 @@ class SyncManager:
                 try:
                     print(f"🔄 Sync auto - {datetime.now()}")
                     
-                    # Sync bidirectionnel pour l'établissement
-                    tables = ["Students", "Matieres", "Teacher", "Notes", "Class", "User", "Trimestre_moyen_save"]
+                    tables = ["Students", "Matieres", "Teacher", "Notes", "Class", "User"]
                     
                     for table in tables:
-                        # Depuis Supabase vers local
                         if table == "User":
                             self.sync_table_from_supabase(table)
-                        elif table == "Trimestre_moyen_save":
-                            # Sync complète pour cette table (pas de filtre établissement)
-                            self.sync_table_from_supabase(table)
+                            self.sync_table_to_supabase(table)
                         else:
                             self.sync_table_from_supabase(
                                 table,
                                 filter_col="etablissement",
                                 filter_val=etablissement
                             )
-                        
-                        # Depuis local vers Supabase
-                        if table == "User":
-                            self.sync_table_to_supabase(table)
-                        elif table == "Trimestre_moyen_save":
-                            self.sync_table_to_supabase(table)
-                        else:
                             self.sync_table_to_supabase(
                                 table,
                                 filter_col="etablissement",
@@ -279,15 +272,12 @@ class SyncManager:
                     
                 except Exception as e:
                     print(f"❌ Erreur sync auto: {e}")
-                    import traceback
-                    traceback.print_exc()
                 
-                # Attendre 10 minutes
                 time.sleep(SYNC_INTERVAL)
         
         self.sync_thread = threading.Thread(target=sync_loop, daemon=True)
         self.sync_thread.start()
-        print("✅ Sync automatique démarré (10 min)")
+        print("✅ Sync automatique démarré")
     
     def stop_auto_sync(self):
         """Arrête la synchronisation automatique"""
