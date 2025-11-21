@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Crée la structure .deb pour Ubuntu/Debian"""
+"""Crée la structure .deb pour Ubuntu/Debian - VERSION CORRIGÉE"""
 
 import os
 import shutil
@@ -8,8 +8,11 @@ from pathlib import Path
 def create_deb_structure():
     project_root = Path(__file__).parent.parent
     dist_dir = project_root / "dist"
-    # ✅ NOM CORRIGÉ : tirets au lieu de underscores
-    pkg_dir = dist_dir / "bulletinpro-prof-1.0.0"
+    
+    # ✅ CORRECTION: Utiliser le même nom dans le script Python
+    # Le .yml utilise: bulletinpro-prof-$VERSION (avec tirets)
+    version = "1.0.0"
+    pkg_dir = dist_dir / f"bulletinpro-prof-{version}"
     
     print("📦 Création de la structure .deb...")
     
@@ -78,7 +81,7 @@ exit 0
     
     # ✅ Copier l'exécutable (chercher les deux noms possibles)
     exe_found = False
-    for exe_name in ["bulletinpro-Prof", "bulletinpro-prof", "bulletinpro-prof"]:
+    for exe_name in ["bulletinpro-prof", "bulletinpro-Prof"]:
         exe_src = dist_dir / exe_name
         if exe_src.exists():
             exe_dst = pkg_dir / "usr" / "bin" / "bulletinpro-prof"
@@ -89,22 +92,33 @@ exit 0
             break
     
     if not exe_found:
-        print("  ⚠️ Exécutable non trouvé, cherchez dans dist/")
+        print("  ⚠️ Exécutable non trouvé!")
+        print(f"  Cherchez dans: {dist_dir}")
+        print(f"  Fichiers disponibles:")
+        for item in dist_dir.glob("*"):
+            if item.is_file() and not item.suffix in ['.deb', '.exe']:
+                print(f"    - {item.name}")
     
     # Copier les icônes
     icons_dir = project_root / "assets" / "icons"
-    for size in [16, 32, 48, 64, 128, 256, 512]:
-        icon_src = icons_dir / f"logo_{size}x{size}.png"
-        icon_dst = pkg_dir / "usr" / "share" / "icons" / "hicolor" / f"{size}x{size}" / "apps" / "bulletinpro-prof.png"
-        if icon_src.exists():
-            shutil.copy2(icon_src, icon_dst)
-    
-    # Copier vers pixmaps
-    main_icon = icons_dir / "logo.png"
-    if main_icon.exists():
-        shutil.copy2(main_icon, pkg_dir / "usr" / "share" / "pixmaps" / "bulletinpro-prof.png")
+    if icons_dir.exists():
+        # Copier les icônes multiples tailles
+        for size in [16, 32, 48, 64, 128, 256, 512]:
+            icon_src = icons_dir / f"app_icon_{size}x{size}.png"
+            icon_dst = pkg_dir / "usr" / "share" / "icons" / "hicolor" / f"{size}x{size}" / "apps" / "bulletinpro-prof.png"
+            if icon_src.exists():
+                shutil.copy2(icon_src, icon_dst)
+        
+        # Copier vers pixmaps
+        main_icon = icons_dir / "logo.png"
+        if main_icon.exists():
+            shutil.copy2(main_icon, pkg_dir / "usr" / "share" / "pixmaps" / "bulletinpro-prof.png")
+        
+        print("  ✅ Icônes copiées")
     
     print("✅ Structure .deb créée avec succès !")
+    print(f"📁 Dossier: {pkg_dir}")
+    print(f"📁 Nom: {pkg_dir.name}")
 
 if __name__ == "__main__":
     create_deb_structure()
