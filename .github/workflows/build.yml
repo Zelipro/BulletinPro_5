@@ -66,27 +66,15 @@ jobs:
             New-Item -ItemType Directory -Force -Path "assets/icons"
           }
           python scripts/create_icons.py
-      
+
+
+      #=================== Utiliser le fichier .spec plutôt =================
       - name: 🔨 PyInstaller build
         shell: pwsh
         run: |
-          pyinstaller --noconfirm --clean `
-            --name "BulletinPro-Prof" `
-            --windowed --onefile `
-            --icon "assets/icons/logo.ico" `
-            --add-data "config.py;." `
-            --add-data "assets/icons;assets/icons" `
-            --hidden-import flet `
-            --hidden-import flet.core `
-            --hidden-import flet_core `
-            --hidden-import flet_runtime `
-            --hidden-import supabase `
-            --hidden-import PIL `
-            --hidden-import sqlite3 `
-            --collect-all flet `
-            --collect-all flet_core `
-            --collect-all flet_runtime `
-            main.py
+          # Utiliser le fichier .spec au lieu de la commande directe
+          pyinstaller --noconfirm --clean BulletinPro-Prof.spec
+      #======================================================================
       
       - name: ✅ Verify executable
         shell: pwsh
