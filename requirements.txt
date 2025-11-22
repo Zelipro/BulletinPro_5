@@ -1,14 +1,12 @@
 # ================================
 # BULLETINPRO - REQUIREMENTS
+# Version corrigée pour Windows
 # ================================
 
 # Core Framework
 flet[all]>=0.24.0
 flet-core>=0.24.0
 flet-runtime>=0.24.0
-
-# PDF Generation
-#fpdf2==2.8.1
 
 # Database & Cloud Backend
 supabase==2.9.0
@@ -21,12 +19,19 @@ Pillow==10.4.0
 # Build Tools
 pyinstaller==6.11.0
 
-# Linux: Fix pour ncurses et portabilité
-# (installé uniquement en CI/CD)
-# staticx==0.14.1
+# ✅ FIX : backports.zoneinfo avec condition Python < 3.9
+# Sur Python 3.11+, ce package n'est plus nécessaire
+# mais on le garde pour compatibilité
+backports.zoneinfo;python_version<'3.9'
+
+# ✅ FIX : importlib-metadata (requis par certains packages)
+backports.zoneinfo;python_version<'3.9'
+importlib-metadata>=6.0.0
 
 # Utilities
 requests==2.31.0
+
+
 
 # ================================
 # DÉPENDANCES OPTIONNELLES
