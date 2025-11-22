@@ -1,6 +1,6 @@
 # ================================
 # BULLETINPRO - REQUIREMENTS
-# Version corrigée pour Linux/Windows
+# ✅ Corrigé pour Linux/Windows
 # ================================
 
 # Core Framework
@@ -19,20 +19,10 @@ Pillow==10.4.0
 # Build Tools
 pyinstaller==6.11.0
 
-# ✅ FIX CRITIQUE : backports.zoneinfo seulement pour Python < 3.9
-# Sur Python 3.11, zoneinfo est déjà intégré
+# ✅ IMPORTANT: backports.zoneinfo SEULEMENT pour Python < 3.9
+# Python 3.11 a zoneinfo natif - pas besoin d'installer
+# Cette ligne sera ignorée automatiquement sur Python 3.11+
 backports.zoneinfo>=0.2.1;python_version<'3.9'
-
-# ✅ Dépendances pour PyInstaller (éviter pkg_resources)
-importlib-metadata>=6.0.0
 
 # Utilities
 requests==2.31.0
-
-# ================================
-# DÉPENDANCES OPTIONNELLES
-# ================================
-# watchdog==4.0.0        # Auto-reload
-# pytest==8.3.0          # Tests
-# black==24.4.2          # Formatage
-# flake8==7.1.0          # Linting
