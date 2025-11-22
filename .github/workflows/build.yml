@@ -1,4 +1,4 @@
-name: 🚀 Build BulletinPro-Prof Multi-Platform
+name: Build BulletinPro-Prof Multi-Platform
 
 on:
   push:
@@ -31,45 +31,41 @@ permissions:
   contents: write
 
 jobs:
-  # ==================================================================
-  # ======================= WINDOWS BUILD ============================
-  # ==================================================================
   build-windows:
-    name: 🪟 Build Windows
+    name: Build Windows
     runs-on: windows-latest
     timeout-minutes: 45
     
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
       
-      - name: 🐍 Setup Python ${{ env.PYTHON_VERSION }}
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
       
-      - name: 📦 Install Python dependencies
+      - name: Install Python dependencies
         shell: pwsh
         run: |
+          $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+          $OutputEncoding = [System.Text.Encoding]::UTF8
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          
           python -m pip install --upgrade pip setuptools wheel
-          
-          # Installer backports.zoneinfo AVANT requirements.txt
           pip install "backports.zoneinfo;python_version<'3.9'" --no-build-isolation
-          
-          # Installer les autres dépendances
           pip install -r requirements.txt
           pip install pillow pyinstaller
           
-          # ✅ CORRECTION : Vérification simplifiée
-          Write-Host "`n=== Vérification de l'environnement ==="
-          python -c "import sys; print(f'Python version: {sys.version}')"
-          python -c "try:`n    import flet`n    print('✅ Flet installé')`nexcept:`n    print('❌ Flet manquant')"
-          Write-Host "✅ Toutes les dépendances installées avec succès"
+          Write-Host "=== Verification de l'environnement ==="
+          python -c "import sys; print('Python version:', sys.version)"
+          python -c "try:`n    import flet`n    print('Flet installe')`nexcept:`n    print('Flet manquant')"
+          Write-Host "Dependances installees"
       
-      - name: 🖼️ Generate icons
+      - name: Generate icons
         shell: pwsh
         run: |
           if (!(Test-Path "assets/icons")) {
@@ -77,38 +73,40 @@ jobs:
           }
           python scripts/create_icons.py
 
-      - name: 🔨 PyInstaller build
+      - name: PyInstaller build
         shell: pwsh
         run: |
           if (!(Test-Path "BulletinPro-Prof.spec")) {
-            Write-Error "❌ BulletinPro-Prof.spec introuvable !"
+            Write-Error "BulletinPro-Prof.spec introuvable"
             exit 1
           }
           
-          Write-Host "✅ Utilisation de BulletinPro-Prof.spec"
+          Write-Host "Utilisation de BulletinPro-Prof.spec"
           pyinstaller --noconfirm --clean BulletinPro-Prof.spec
       
-      - name: ✅ Verify executable
+      - name: Verify executable
         shell: pwsh
         run: |
           $exePath = "dist/BulletinPro-Prof.exe"
           if (Test-Path $exePath) {
             $size = (Get-Item $exePath).Length / 1MB
-            Write-Host "✅ Executable created: $([math]::Round($size, 2)) MB"
+            Write-Host "Executable created: $([math]::Round($size, 2)) MB"
           } else {
-            Write-Error "❌ Executable not found!"
+            Write-Error "Executable not found"
             exit 1
           }
       
-      - name: 📦 Prepare Windows folder structure
+      - name: Prepare Windows folder structure
         shell: pwsh
-        run: python scripts/build_windows.py
+        run: |
+          $env:PYTHONIOENCODING = "utf-8"
+          python scripts/build_windows.py
       
-      - name: 🛠️ Install Inno Setup
+      - name: Install Inno Setup
         shell: pwsh
         run: choco install innosetup -y --no-progress
       
-      - name: 🎁 Create installer with Inno Setup
+      - name: Create installer with Inno Setup
         shell: pwsh
         run: |
           $version = "${{ github.event.inputs.version || github.ref_name || '1.0.0' }}"
@@ -118,16 +116,16 @@ jobs:
           
           if (-not ($version -match '^\d')) {
             $version = '1.0.0'
-            Write-Host "⚠️ Version invalide, utilisation de 1.0.0"
+            Write-Host "Version invalide, utilisation de 1.0.0"
           }
           
-          Write-Host "✅ Building installer version: $version"
+          Write-Host "Building installer version: $version"
           
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
             /DAPP_VERSION=$version `
             installer/windows.iss
       
-      - name: 📤 Upload Windows installer
+      - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
           name: BulletinPro-Prof-Windows-Installer
@@ -135,7 +133,7 @@ jobs:
           retention-days: 30
           if-no-files-found: error
       
-      - name: 📤 Upload Windows portable exe
+      - name: Upload Windows portable exe
         uses: actions/upload-artifact@v4
         with:
           name: BulletinPro-Prof-Windows-Portable
@@ -143,27 +141,24 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-  # ==================================================================
-  # ======================= LINUX BUILD ==============================
-  # ==================================================================
   build-linux:
-    name: 🐧 Build Linux (DEB)
+    name: Build Linux (DEB)
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
       
-      - name: 🐍 Setup Python ${{ env.PYTHON_VERSION }}
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
       
-      - name: 📦 Install system dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y \
@@ -177,28 +172,27 @@ jobs:
             libtinfo6 \
             desktop-file-utils
       
-      - name: 📦 Install Python dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pillow pyinstaller
           
-          # ✅ CORRECTION : Vérification simplifiée
-          echo "=== Vérification de l'environnement ==="
-          python -c "import sys; print(f'Python version: {sys.version}')"
+          echo "=== Verification de l'environnement ==="
+          python -c "import sys; print('Python version:', sys.version)"
           python -c "try:
               import flet
-              print('✅ Flet installé')
+              print('Flet installe')
           except:
-              print('❌ Flet manquant')"
-          echo "✅ Toutes les dépendances installées avec succès"
+              print('Flet manquant')"
+          echo "Dependances installees"
       
-      - name: 🖼️ Generate icons
+      - name: Generate icons
         run: |
           mkdir -p assets/icons
           python scripts/create_icons.py
       
-      - name: 🔨 PyInstaller build
+      - name: PyInstaller build
         run: |
           pyinstaller --noconfirm --clean \
             --name "bulletinpro-prof" \
@@ -218,18 +212,18 @@ jobs:
             --collect-all flet_runtime \
             main.py
       
-      - name: ✅ Verify executable
+      - name: Verify executable
         run: |
           if [ -f "dist/bulletinpro-prof" ]; then
             chmod +x dist/bulletinpro-prof
             size=$(du -h dist/bulletinpro-prof | cut -f1)
-            echo "✅ Executable created: $size"
+            echo "Executable created: $size"
           else
-            echo "❌ Executable not found!"
+            echo "Executable not found"
             exit 1
           fi
 
-      - name: 📦 Create DEB package structure
+      - name: Create DEB package structure
         run: |
           VERSION="${{ github.event.inputs.version || github.ref_name || '1.0.0' }}"
           VERSION=${VERSION#v}
@@ -238,53 +232,53 @@ jobs:
           
           if [[ ! $VERSION =~ ^[0-9] ]]; then
             VERSION="1.0.0"
-            echo "⚠️ Version invalide, utilisation de 1.0.0"
+            echo "Version invalide, utilisation de 1.0.0"
           fi
           
-          echo "✅ Version validée: $VERSION"
+          echo "Version validee: $VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           
           python scripts/build_linux.py "$VERSION"
 
-      - name: 🏗️ Build DEB package
+      - name: Build DEB package
         run: |
           VERSION=${{ env.VERSION }}
-          echo "✅ Building DEB version: $VERSION"
+          echo "Building DEB version: $VERSION"
           
           cd dist
           
           if [ -d "bulletinpro-prof-$VERSION" ]; then
             PKG_DIR="bulletinpro-prof-$VERSION"
           else
-            echo "❌ Package directory not found!"
-            echo "📂 Contenu de dist/ :"
+            echo "Package directory not found"
+            echo "Contenu de dist/ :"
             ls -la
             exit 1
           fi
           
-          echo "📋 Contenu du fichier control :"
+          echo "Contenu du fichier control :"
           cat "$PKG_DIR/DEBIAN/control"
           echo ""
           
           chmod 644 "$PKG_DIR/DEBIAN/control"
           
-          echo "🔨 Construction du paquet .deb..."
+          echo "Construction du paquet .deb..."
           fakeroot dpkg-deb --build "$PKG_DIR"
           
           mv "${PKG_DIR}.deb" "BulletinPro-Prof_${VERSION}_amd64.deb"
           
           if [ -f "BulletinPro-Prof_${VERSION}_amd64.deb" ]; then
             size=$(du -h "BulletinPro-Prof_${VERSION}_amd64.deb" | cut -f1)
-            echo "✅ DEB package created: $size"
+            echo "DEB package created: $size"
             echo ""
-            echo "📋 Informations du paquet :"
+            echo "Informations du paquet :"
             dpkg-deb --info "BulletinPro-Prof_${VERSION}_amd64.deb"
           else
-            echo "❌ DEB package creation failed!"
+            echo "DEB package creation failed"
             exit 1
           fi
       
-      - name: 📤 Upload DEB package
+      - name: Upload DEB package
         uses: actions/upload-artifact@v4
         with:
           name: BulletinPro-Prof-Linux-DEB
@@ -292,7 +286,7 @@ jobs:
           retention-days: 30
           if-no-files-found: error
       
-      - name: 📤 Upload Linux binary
+      - name: Upload Linux binary
         uses: actions/upload-artifact@v4
         with:
           name: BulletinPro-Prof-Linux-Binary
@@ -300,31 +294,28 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-  # ==================================================================
-  # ========================= RELEASE ================================
-  # ==================================================================
   create-release:
-    name: 🎉 Create GitHub Release
+    name: Create GitHub Release
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     
     steps:
-      - name: 📥 Checkout
+      - name: Checkout
         uses: actions/checkout@v4
       
-      - name: 📥 Download all artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
       
-      - name: 📂 List files (debug)
+      - name: List files (debug)
         run: |
           echo "=== Artifacts structure ==="
           ls -R ./artifacts
           echo "==========================="
       
-      - name: 📋 Prepare release files
+      - name: Prepare release files
         run: |
           mkdir -p ./release
           find ./artifacts -type f \( -name "*.exe" -o -name "*.deb" \) -exec cp {} ./release/ \;
@@ -332,33 +323,33 @@ jobs:
           ls -lh ./release
           echo "===================="
       
-      - name: 🎉 Create GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: ./release/*
           body: |
-            ## 🚀 BulletinPro-Prof ${{ github.ref_name }}
+            ## BulletinPro-Prof ${{ github.ref_name }}
             
-            ### 📥 Téléchargements disponibles
+            ### Telechargements disponibles
             
-            #### 🪟 Windows
+            #### Windows
             - **Installateur complet** : `BulletinPro-Prof_Setup_*.exe`
             - **Version portable** : `BulletinPro-Prof.exe`
             
-            #### 🐧 Linux (Ubuntu/Debian)
+            #### Linux (Ubuntu/Debian)
             - **Package Debian** : `BulletinPro-Prof_*_amd64.deb`
             - **Binaire standalone** : `bulletinpro-prof`
             
-            ### 📋 Prérequis
+            ### Prerequis
             
             **Windows** : Windows 10/11 (64-bit)
             **Linux** : Ubuntu 20.04+, Debian 11+
             
-            ### 🆕 Nouveautés
+            ### Nouveautes
             
             - Synchronisation cloud avec Supabase
-            - Interface utilisateur améliorée
-            - Gestion multi-plateforme des données
+            - Interface utilisateur amelioree
+            - Gestion multi-plateforme des donnees
           draft: false
           prerelease: false
           generate_release_notes: true
