@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Crée la structure .deb pour Ubuntu/Debian - VERSION CORRIGÉE
-Compatible avec le workflow GitHub Actions
+✅ Fix : Numéro de version sans préfixe 'v'
+✅ Compatible avec le workflow GitHub Actions
 """
 
 import os
@@ -15,11 +16,16 @@ def create_deb_structure():
     project_root = Path(__file__).parent.parent
     dist_dir = project_root / "dist"
     
-    # ✅ CORRECTION : Récupérer la version depuis les arguments ou variable d'environnement
+    # ✅ CORRECTION : Nettoyer le préfixe 'v' et 'main'
     if len(sys.argv) > 1:
-        version = sys.argv[1].replace('v', '')
+        version = sys.argv[1].replace('v', '').replace('main', '1.0.0').strip()
     else:
-        version = os.environ.get('VERSION', '1.0.0').replace('v', '')
+        version = os.environ.get('VERSION', '1.0.0').replace('v', '').replace('main', '1.0.0').strip()
+    
+    # ✅ VALIDATION : S'assurer que la version commence par un chiffre
+    if not version or not version[0].isdigit():
+        version = "1.0.0"
+        print(f"⚠️ Version invalide, utilisation de la version par défaut : {version}")
     
     print(f"📦 Version détectée : {version}")
     
@@ -50,7 +56,7 @@ def create_deb_structure():
         print(f"  ✅ Créé : {directory.relative_to(dist_dir)}")
     
     # ============================================================
-    # FICHIER DEBIAN/control
+    # ✅ FICHIER DEBIAN/control - FORMAT STRICT
     # ============================================================
     control_content = f"""Package: bulletinpro-prof
 Version: {version}
@@ -67,9 +73,11 @@ Description: Système de gestion de bulletins scolaires
 """
     
     control_path = pkg_dir / "DEBIAN" / "control"
-    with open(control_path, "w") as f:
+    with open(control_path, "w", encoding="utf-8") as f:
         f.write(control_content)
-    print(f"  ✅ Créé : DEBIAN/control")
+    
+    # ✅ IMPORTANT : Pas de ligne vide à la fin
+    print(f"  ✅ Créé : DEBIAN/control (version: {version})")
     
     # ============================================================
     # FICHIER .desktop
@@ -89,7 +97,7 @@ StartupNotify=true
 """
     
     desktop_path = pkg_dir / "usr" / "share" / "applications" / "bulletinpro-prof.desktop"
-    with open(desktop_path, "w") as f:
+    with open(desktop_path, "w", encoding="utf-8") as f:
         f.write(desktop_content)
     print(f"  ✅ Créé : bulletinpro-prof.desktop")
     
@@ -105,7 +113,7 @@ exit 0
 """
     
     postinst_path = pkg_dir / "DEBIAN" / "postinst"
-    with open(postinst_path, "w") as f:
+    with open(postinst_path, "w", encoding="utf-8") as f:
         f.write(postinst_content)
     os.chmod(postinst_path, 0o755)
     print(f"  ✅ Créé : DEBIAN/postinst (exécutable)")
@@ -168,22 +176,8 @@ exit 0
     print("="*60)
     print(f"📁 Dossier : {pkg_dir}")
     print(f"📦 Package : bulletinpro-prof-{version}")
-    print(f"\n📋 Contenu du paquet :")
-    
-    # Afficher l'arborescence
-    def show_tree(path, prefix=""):
-        items = sorted(path.iterdir(), key=lambda x: (not x.is_dir(), x.name))
-        for i, item in enumerate(items):
-            is_last = i == len(items) - 1
-            current_prefix = "└── " if is_last else "├── "
-            print(f"{prefix}{current_prefix}{item.name}")
-            if item.is_dir() and item.name != "__pycache__":
-                extension = "    " if is_last else "│   "
-                show_tree(item, prefix + extension)
-    
-    show_tree(pkg_dir)
-    
-    print("\n🎯 Prochaine étape : dpkg-deb --build")
+    print(f"📋 Version : {version} (valide pour dpkg)")
+    print(f"\n🎯 Prochaine étape : dpkg-deb --build")
     return True
 
 
