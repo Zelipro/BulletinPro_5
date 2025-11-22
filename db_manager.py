@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Gestionnaire de base de données SQLite avec chemin sécurisé
-Compatible Windows/Linux/macOS
+VERSION PORTABLE - Compatible Windows/Linux/macOS
+Compatible PyInstaller et développement
 """
 
 import sqlite3
@@ -24,33 +25,38 @@ class DatabaseManager:
         return cls._instance
     
     def _initialize_db_path(self):
-        """Initialise le chemin de la base de données selon l'OS"""
+        """Initialise le chemin de la base de données - VERSION PORTABLE"""
         
-        # Déterminer le dossier de données selon l'OS
-        if sys.platform == "win32":
-            # Windows: %APPDATA%\BulletinPro
-            app_data = os.getenv('APPDATA')
-            base_dir = Path(app_data) / "BulletinPro"
+        # Déterminer le dossier d'exécution
+        if getattr(sys, 'frozen', False):
+            # Mode PyInstaller : dossier de l'exe
+            app_dir = Path(sys.executable).parent
+            print("🚀 Mode exécutable détecté")
         else:
-            # Linux/macOS: ~/.local/share/BulletinPro
-            home = Path.home()
-            base_dir = home / ".local" / "share" / "BulletinPro"
+            # Mode développement : dossier du projet
+            app_dir = Path(__file__).parent
+            print("🔧 Mode développement détecté")
         
-        # Créer le dossier s'il n'existe pas
+        print(f"📂 Dossier application: {app_dir}")
+        
+        # Créer un sous-dossier "data" pour la DB
+        data_dir = app_dir / "data"
+        
         try:
-            base_dir.mkdir(parents=True, exist_ok=True)
-            print(f"📁 Dossier données: {base_dir}")
+            data_dir.mkdir(parents=True, exist_ok=True)
+            print(f"📁 Dossier données créé: {data_dir}")
         except Exception as e:
             print(f"⚠️ Erreur création dossier: {e}")
-            # Fallback: utiliser le dossier courant
-            base_dir = Path.cwd()
+            # Fallback : utiliser le même dossier que l'exe
+            data_dir = app_dir
+            print(f"📁 Fallback: {data_dir}")
         
         # Définir le chemin complet de la base
-        self._db_path = str(base_dir / "base.db")
+        self._db_path = str(data_dir / "base.db")
         print(f"💾 Base de données: {self._db_path}")
         
         # Vérifier les permissions
-        self._check_permissions(base_dir)
+        self._check_permissions(data_dir)
     
     def _check_permissions(self, directory):
         """Vérifie les permissions d'écriture"""
@@ -99,6 +105,8 @@ def init_all_tables():
     cursor = conn.cursor()
     
     try:
+        print("📦 Initialisation des tables...")
+        
         # Table User
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS User (
@@ -218,10 +226,11 @@ def init_all_tables():
         """)
         
         conn.commit()
-        print("✅ Toutes les tables initialisées (structure Supabase)")
+        print("✅ Toutes les tables initialisées avec succès")
         
     except Exception as e:
         print(f"❌ Erreur initialisation tables: {e}")
         conn.rollback()
+        raise
     finally:
         conn.close()
