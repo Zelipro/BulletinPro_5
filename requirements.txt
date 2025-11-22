@@ -1,6 +1,6 @@
 # ================================
 # BULLETINPRO - REQUIREMENTS
-# Version corrigée pour Windows
+# Version corrigée pour Linux/Windows
 # ================================
 
 # Core Framework
@@ -19,19 +19,16 @@ Pillow==10.4.0
 # Build Tools
 pyinstaller==6.11.0
 
-# ✅ FIX : backports.zoneinfo avec condition Python < 3.9
-# Sur Python 3.11+, ce package n'est plus nécessaire
-# mais on le garde pour compatibilité
-backports.zoneinfo;python_version<'3.9'
-
-# ✅ FIX : importlib-metadata (requis par certains packages)
-backports.zoneinfo;python_version<'3.9'
+# ✅ FIX CRITIQUE : Dépendances pour PyInstaller Linux
+backports.zoneinfo>=0.2.1;python_version<'3.9'
 importlib-metadata>=6.0.0
+jaraco.text>=3.7.0
+jaraco.context>=4.3.0
+jaraco.functools>=3.6.0
+more-itertools>=9.0.0
 
 # Utilities
 requests==2.31.0
-
-
 
 # ================================
 # DÉPENDANCES OPTIONNELLES
