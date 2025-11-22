@@ -21,10 +21,6 @@ Pillow==10.4.0
 # Build Tools
 pyinstaller==6.11.0
 
-# Fix PyInstaller backports issue
-backports.zoneinfo==0.2.1
-importlib-metadata==6.8.0
-
 # Linux: Fix pour ncurses et portabilité
 # (installé uniquement en CI/CD)
 # staticx==0.14.1
