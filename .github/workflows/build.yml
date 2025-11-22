@@ -57,6 +57,7 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
           pip install pillow pyinstaller
+          pip install backports.zoneinfo importlib-metadata
       
       - name: 🖼️ Generate icons
         shell: pwsh
