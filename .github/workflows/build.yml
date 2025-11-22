@@ -209,10 +209,10 @@ jobs:
             echo "❌ Executable not found!"
             exit 1
           fi
-      
+
       - name: 📦 Create DEB package structure
-        run: python scripts/build_linux.py
-      
+        run: python scripts/build_linux.py ${{ github.event.inputs.version || github.ref_name || '1.0.0' }}
+
       - name: 🏗️ Build DEB package
         run: |
           VERSION=${{ github.event.inputs.version || github.ref_name || '1.0.0' }}
