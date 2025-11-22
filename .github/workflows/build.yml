@@ -174,7 +174,11 @@ jobs:
       
       - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
+          
+          # ✅ CRITIQUE : Installer backports AVANT requirements.txt
+          pip install backports.zoneinfo importlib-metadata jaraco.text jaraco.context more-itertools
+          
           pip install -r requirements.txt
           pip install pillow pyinstaller
           
@@ -185,6 +189,11 @@ jobs:
               print('Flet installe')
           except:
               print('Flet manquant')"
+          python -c "try:
+              import backports.zoneinfo
+              print('backports.zoneinfo OK')
+          except Exception as e:
+              print('backports.zoneinfo ERREUR:', e)"
           echo "Dependances installees"
       
       - name: Generate icons
