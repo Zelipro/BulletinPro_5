@@ -210,19 +210,39 @@ jobs:
             echo "❌ Executable not found!"
             exit 1
           fi
-
+          
+      #==================================
       - name: 📦 Create DEB package structure
-        run: python scripts/build_linux.py ${{ github.event.inputs.version || github.ref_name || '1.0.0' }}
-
+        run: |
+          # ✅ Extraire et nettoyer la version
+          VERSION="${{ github.event.inputs.version || github.ref_name || '1.0.0' }}"
+          VERSION="${VERSION#v}"
+          
+          # ✅ Si c'est une branche, utiliser 1.0.0
+          if [[ "$VERSION" == "main" ]] || [[ "$VERSION" == "develop" ]]; then
+            VERSION="1.0.0"
+          fi
+          
+          echo "Package version: $VERSION"
+          python scripts/build_linux.py "$VERSION"
+      #==================================
+      #----------------------------------
       - name: 🏗️ Build DEB package
         run: |
-          VERSION=${{ github.event.inputs.version || github.ref_name || '1.0.0' }}
-          VERSION=${VERSION#v}
+          # ✅ CORRECTION : Extraire la version correctement
+          VERSION="${{ github.event.inputs.version || github.ref_name || '1.0.0' }}"
+          VERSION="${VERSION#v}"  # Supprimer le 'v' au début si présent
+          
+          # ✅ Si c'est "main" ou une branche, utiliser 1.0.0 par défaut
+          if [[ "$VERSION" == "main" ]] || [[ "$VERSION" == "develop" ]]; then
+            VERSION="1.0.0"
+          fi
+          
           echo "Building DEB version: $VERSION"
           
           cd dist
           
-          # Vérifier que le dossier existe (avec tirets)
+          # Vérifier que le dossier existe
           if [ -d "bulletinpro-prof-$VERSION" ]; then
             PKG_DIR="bulletinpro-prof-$VERSION"
           else
@@ -246,7 +266,7 @@ jobs:
             echo "❌ DEB package creation failed!"
             exit 1
           fi
-      
+            #----------------------------------
       - name: 📤 Upload DEB package
         uses: actions/upload-artifact@v4
         with:
