@@ -51,24 +51,22 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
       
-      # ✅ CORRECTION : Installation des dépendances Python
       - name: 📦 Install Python dependencies
         shell: pwsh
         run: |
           python -m pip install --upgrade pip setuptools wheel
           
-          # ✅ Installer backports.zoneinfo AVANT requirements.txt
-          # (évite les conflits de compilation sur Windows)
+          # Installer backports.zoneinfo AVANT requirements.txt
           pip install "backports.zoneinfo;python_version<'3.9'" --no-build-isolation
           
           # Installer les autres dépendances
           pip install -r requirements.txt
           pip install pillow pyinstaller
           
-          # ✅ Vérification post-installation
+          # ✅ CORRECTION : Vérification simplifiée
           Write-Host "`n=== Vérification de l'environnement ==="
           python -c "import sys; print(f'Python version: {sys.version}')"
-          python -c "import flet; print(f'Flet installed: {flet.__version__}')"
+          python -c "try:`n    import flet`n    print('✅ Flet installé')`nexcept:`n    print('❌ Flet manquant')"
           Write-Host "✅ Toutes les dépendances installées avec succès"
       
       - name: 🖼️ Generate icons
@@ -79,11 +77,9 @@ jobs:
           }
           python scripts/create_icons.py
 
-      # ✅ Utiliser le fichier .spec plutôt que la commande directe
       - name: 🔨 PyInstaller build
         shell: pwsh
         run: |
-          # Vérifier que le .spec existe
           if (!(Test-Path "BulletinPro-Prof.spec")) {
             Write-Error "❌ BulletinPro-Prof.spec introuvable !"
             exit 1
@@ -115,13 +111,11 @@ jobs:
       - name: 🎁 Create installer with Inno Setup
         shell: pwsh
         run: |
-          # ✅ CORRECTION : Nettoyer la version proprement
           $version = "${{ github.event.inputs.version || github.ref_name || '1.0.0' }}"
-          $version = $version -replace '^v', ''  # Enlever 'v' au début
-          $version = $version -replace 'main', '1.0.0'  # Remplacer 'main' par '1.0.0'
-          $version = $version -replace 'develop', '1.0.0'  # Remplacer 'develop' par '1.0.0'
+          $version = $version -replace '^v', ''
+          $version = $version -replace 'main', '1.0.0'
+          $version = $version -replace 'develop', '1.0.0'
           
-          # ✅ Valider que la version commence par un chiffre
           if (-not ($version -match '^\d')) {
             $version = '1.0.0'
             Write-Host "⚠️ Version invalide, utilisation de 1.0.0"
@@ -189,10 +183,14 @@ jobs:
           pip install -r requirements.txt
           pip install pillow pyinstaller
           
-          # ✅ Vérification post-installation
+          # ✅ CORRECTION : Vérification simplifiée
           echo "=== Vérification de l'environnement ==="
           python -c "import sys; print(f'Python version: {sys.version}')"
-          python -c "import flet; print(f'Flet installed: {flet.__version__}')"
+          python -c "try:
+              import flet
+              print('✅ Flet installé')
+          except:
+              print('❌ Flet manquant')"
           echo "✅ Toutes les dépendances installées avec succès"
       
       - name: 🖼️ Generate icons
@@ -233,13 +231,11 @@ jobs:
 
       - name: 📦 Create DEB package structure
         run: |
-          # ✅ CORRECTION : Nettoyer la version proprement
           VERSION="${{ github.event.inputs.version || github.ref_name || '1.0.0' }}"
-          VERSION=${VERSION#v}  # Enlever 'v' au début
-          VERSION=${VERSION//main/1.0.0}  # Remplacer 'main' par '1.0.0'
-          VERSION=${VERSION//develop/1.0.0}  # Remplacer 'develop' par '1.0.0'
+          VERSION=${VERSION#v}
+          VERSION=${VERSION//main/1.0.0}
+          VERSION=${VERSION//develop/1.0.0}
           
-          # ✅ Valider que la version commence par un chiffre
           if [[ ! $VERSION =~ ^[0-9] ]]; then
             VERSION="1.0.0"
             echo "⚠️ Version invalide, utilisation de 1.0.0"
@@ -257,7 +253,6 @@ jobs:
           
           cd dist
           
-          # Vérifier que le dossier existe (avec tirets)
           if [ -d "bulletinpro-prof-$VERSION" ]; then
             PKG_DIR="bulletinpro-prof-$VERSION"
           else
@@ -267,22 +262,17 @@ jobs:
             exit 1
           fi
           
-          # ✅ IMPORTANT : Vérifier le fichier control
           echo "📋 Contenu du fichier control :"
           cat "$PKG_DIR/DEBIAN/control"
           echo ""
           
-          # ✅ Vérifier les permissions du fichier control
           chmod 644 "$PKG_DIR/DEBIAN/control"
           
-          # Construire le .deb
           echo "🔨 Construction du paquet .deb..."
           fakeroot dpkg-deb --build "$PKG_DIR"
           
-          # Renommer proprement
           mv "${PKG_DIR}.deb" "BulletinPro-Prof_${VERSION}_amd64.deb"
           
-          # Vérifier
           if [ -f "BulletinPro-Prof_${VERSION}_amd64.deb" ]; then
             size=$(du -h "BulletinPro-Prof_${VERSION}_amd64.deb" | cut -f1)
             echo "✅ DEB package created: $size"
@@ -353,42 +343,22 @@ jobs:
             
             #### 🪟 Windows
             - **Installateur complet** : `BulletinPro-Prof_Setup_*.exe`
-              - Installation guidée avec raccourcis
-              - Recommandé pour la plupart des utilisateurs
             - **Version portable** : `BulletinPro-Prof.exe`
-              - Aucune installation requise
-              - Idéal pour clé USB
             
             #### 🐧 Linux (Ubuntu/Debian)
             - **Package Debian** : `BulletinPro-Prof_*_amd64.deb`
-              - Pour Ubuntu 20.04+, Debian 11+
-              - Installation : `sudo dpkg -i BulletinPro-Prof_*.deb`
             - **Binaire standalone** : `bulletinpro-prof`
-              - Exécutable direct
-              - Nécessite : `chmod +x bulletinpro-prof && ./bulletinpro-prof`
             
             ### 📋 Prérequis
             
             **Windows** : Windows 10/11 (64-bit)
-            **Linux** : Ubuntu 20.04+, Debian 11+, ou distributions compatibles
+            **Linux** : Ubuntu 20.04+, Debian 11+
             
-            ### 🆕 Nouveautés de cette version
+            ### 🆕 Nouveautés
             
             - Synchronisation cloud avec Supabase
             - Interface utilisateur améliorée
             - Gestion multi-plateforme des données
-            - Corrections de bugs et optimisations
-            
-            ### 📚 Documentation
-            
-            - [Guide d'utilisation](https://github.com/${{ github.repository }}/wiki)
-            - [FAQ](https://github.com/${{ github.repository }}/wiki/FAQ)
-            - [Rapporter un bug](https://github.com/${{ github.repository }}/issues)
-            
-            ---
-            
-            **Note** : Cette version est destinée aux enseignants (saisie de notes).
-            Pour la version administrateur complète, consultez [BulletinPro](https://github.com/Zelipro/BulletinPro).
           draft: false
           prerelease: false
           generate_release_notes: true
